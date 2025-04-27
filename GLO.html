@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Conteggio Registrazione GLO</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f6fa;
+            padding: 20px;
+            text-align: center;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        button {
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+            width: 50px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .counter {
+            font-size: 24px;
+            margin: 15px;
+        }
+        .device-container {
+            margin-top: 20px;
+        }
+        #totaleFinale {
+            margin-top: 30px;
+            font-size: 28px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>📦 Registrazione Dispositivi GLO</h1>
+
+    <div id="setup">
+        <p>Quanti dispositivi devi registrare?</p>
+        <input type="number" id="totaleDispositivi" placeholder="Totale dispositivi">
+        <p>Quanti sono GLO PRO?</p>
+        <input type="number" id="proDispositivi" placeholder="Numero GLO PRO">
+        <p>Quanti sono GLO HYPER?</p>
+        <input type="number" id="hyperDispositivi" placeholder="Numero GLO HYPER">
+        <br><br>
+        <button style="background-color: #2ecc71; width: auto;" onclick="avviaConteggio()">Inizia</button>
+    </div>
+
+    <div id="conteggio" style="display: none;">
+        <h2>📋 Gestisci Registrazioni</h2>
+        <div class="device-container">
+            <h3>GLO PRO</h3>
+            <button onclick="modifica('pro', -1)">➖</button>
+            <span class="counter" id="contatorePro">0</span>
+            <button onclick="modifica('pro', 1)">➕</button>
+        </div>
+        <div class="device-container">
+            <h3>GLO HYPER</h3>
+            <button onclick="modifica('hyper', -1)">➖</button>
+            <span class="counter" id="contatoreHyper">0</span>
+            <button onclick="modifica('hyper', 1)">➕</button>
+        </div>
+
+        <div id="totaleFinale">
+            🔥 Dispositivi da registrare: <span id="contatoreTotale">0</span>
+        </div>
+
+        <br><br>
+        <button style="background-color: #e74c3c; width: auto;" onclick="reset()">🔄 Reset</button>
+    </div>
+
+    <script>
+        let totale = 0;
+        let pro = 0;
+        let hyper = 0;
+
+        function avviaConteggio() {
+            totale = parseInt(document.getElementById('totaleDispositivi').value) || 0;
+            pro = parseInt(document.getElementById('proDispositivi').value) || 0;
+            hyper = parseInt(document.getElementById('hyperDispositivi').value) || 0;
+
+            if (pro + hyper !== totale) {
+                alert("⚠️ ATTENZIONE: La somma di PRO e HYPER deve essere uguale al totale!");
+                return;
+            }
+
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('conteggio').style.display = 'block';
+
+            aggiornaDisplay();
+        }
+
+        function modifica(tipo, valore) {
+            if (tipo === 'pro') {
+                if (valore === -1 && pro > 0) pro--;
+                if (valore === 1) pro++;
+            } else if (tipo === 'hyper') {
+                if (valore === -1 && hyper > 0) hyper--;
+                if (valore === 1) hyper++;
+            }
+            aggiornaDisplay();
+        }
+
+        function aggiornaDisplay() {
+            const nuovoTotale = pro + hyper;
+            document.getElementById('contatorePro').textContent = pro;
+            document.getElementById('contatoreHyper').textContent = hyper;
+            document.getElementById('contatoreTotale').textContent = nuovoTotale;
+
+            if (nuovoTotale === 0) {
+                document.getElementById('totaleFinale').innerHTML = "🎉 Tutti i dispositivi sono stati registrati!";
+            } else {
+                document.getElementById('totaleFinale').innerHTML = `🔥 Dispositivi da registrare: <span id="contatoreTotale">${nuovoTotale}</span>`;
+            }
+        }
+
+        function reset() {
+            location.reload();
+        }
+    </script>
+
+</body>
+</html>
