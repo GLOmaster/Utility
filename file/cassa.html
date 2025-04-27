@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Cassa Dinamica</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            width: 250px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #2196F3;
+            color: white;
+            cursor: pointer;
+            width: 260px;
+        }
+        button:hover {
+            background-color: #1976D2;
+        }
+        #risultato {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <button onclick="location.href='/index.html'">🔙 Torna al Menù</button>
+
+    <h1>Cassa - Totale e Resto</h1>
+
+    <div id="selezioneProdotti">
+        <p>Quanti prodotti vuoi inserire?</p>
+        <input type="number" id="numeroProdotti" placeholder="Inserisci un numero">
+        <br>
+        <button onclick="generaCampi()">Conferma</button>
+    </div>
+
+    <form id="formProdotti"></form>
+
+    <div id="pagamentoSection" style="display:none;">
+        <h2>Pagamento</h2>
+        <input type="number" id="pagato" placeholder="Quanto hai pagato?"><br><br>
+        <button onclick="calcola()" type="button">Calcola Totale e Resto</button><br><br>
+        <button onclick="resetPage()" type="button" style="background-color: #f44336;">🔄 Reset</button>
+    </div>
+
+    <p id="risultato"></p>
+
+    <script>
+        function generaCampi() {
+            const numero = parseInt(document.getElementById('numeroProdotti').value);
+            const form = document.getElementById('formProdotti');
+            const selezione = document.getElementById('selezioneProdotti');
+
+            selezione.style.display = 'none';
+            form.innerHTML = '';
+
+            for (let i = 0; i < numero; i++) {
+                form.innerHTML += `
+                    <h3>Prodotto ${i+1}</h3>
+                    <input type="text" id="nome${i}" placeholder="Nome prodotto"><br>
+                    <input type="number" id="prezzo${i}" placeholder="Prezzo €"><br><br>
+                `;
+            }
+
+            document.getElementById('pagamentoSection').style.display = 'block';
+        }
+
+        function calcola() {
+            const numero = parseInt(document.getElementById('numeroProdotti').value);
+            let totale = 0;
+
+            for (let i = 0; i < numero; i++) {
+                const prezzo = parseFloat(document.getElementById(`prezzo${i}`).value);
+                if (!isNaN(prezzo)) {
+                    totale += prezzo;
+                }
+            }
+
+            const pagato = parseFloat(document.getElementById('pagato').value);
+            const resto = pagato - totale;
+
+            if (resto >= 0) {
+                document.getElementById('risultato').innerHTML = `
+                    💵 Totale da pagare: <strong>${totale.toFixed(2)}€</strong><br>
+                    💳 Resto: <strong>${resto.toFixed(2)}€</strong>
+                `;
+            } else {
+                document.getElementById('risultato').innerHTML = `
+                    ⚠️ Pagamento insufficiente! Devi ancora pagare <strong>${Math.abs(resto).toFixed(2)}€</strong>
+                `;
+            }
+        }
+
+        function resetPage() {
+            location.reload();
+        }
+    </script>
+
+</body>
+</html>
