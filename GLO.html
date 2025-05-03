@@ -10,10 +10,10 @@
             padding: 20px;
             text-align: center;
         }
-        h1, h2 {
+        h1, h2, h3 {
             color: #333;
         }
-        input, button {
+        input, select, button {
             margin: 10px;
             padding: 10px;
             font-size: 18px;
@@ -24,7 +24,7 @@
             cursor: pointer;
             background-color: #3498db;
             color: white;
-            width: 260px;
+            width: auto;
         }
         button:hover {
             background-color: #2980b9;
@@ -36,36 +36,34 @@
         .device-container {
             margin-top: 20px;
         }
-        #totaleFinale {
+        #totaleFinale, #resocontoFinale {
             margin-top: 30px;
-            font-size: 28px;
+            font-size: 22px;
             color: #e74c3c;
             font-weight: bold;
         }
     </style>
 </head>
 <body>
-      
-      <button onclick="location.href='index.html'">🔙 Torna al Menù</button>
 
-    
+    <button onclick="location.href='index.html'">🔙 Torna al Menù</button>
     <h1>📦 Registrazione Dispositivi GLO</h1>
 
     <div id="setup">
         <p>Quanti dispositivi devi registrare?</p>
         <input type="number" id="totaleDispositivi" placeholder="Totale dispositivi">
-        <p>Quanti sono GLO HYPER PRO?</p>
+        <p>Quanti sono GLO PRO?</p>
         <input type="number" id="proDispositivi" placeholder="Numero GLO PRO">
         <p>Quanti sono GLO HYPER?</p>
         <input type="number" id="hyperDispositivi" placeholder="Numero GLO HYPER">
         <br><br>
-        <button style="background-color: #2ecc71; width: auto;" onclick="avviaConteggio()">Inizia</button>
+        <button id="iniziaBtn">Inizia</button> <!-- Aggiungiamo l'id al pulsante -->
     </div>
 
     <div id="conteggio" style="display: none;">
         <h2>📋 Gestisci Registrazioni</h2>
         <div class="device-container">
-            <h3>GLO HYPER PRO</h3>
+            <h3>GLO PRO</h3>
             <button onclick="modifica('pro', -1)">➖</button>
             <span class="counter" id="contatorePro">0</span>
             <button onclick="modifica('pro', 1)">➕</button>
@@ -76,35 +74,58 @@
             <span class="counter" id="contatoreHyper">0</span>
             <button onclick="modifica('hyper', 1)">➕</button>
         </div>
-
         <div id="totaleFinale">
             🔥 Dispositivi da registrare: <span id="contatoreTotale">0</span>
         </div>
-
-        <br><br>
-        <button style="background-color: #e74c3c; width: auto;" onclick="reset()">🔄 Reset</button>
+        <button onclick="reset()">🔄 Reset</button>
     </div>
 
-    <script>
-        let totale = 0;
-        let pro = 0;
-        let hyper = 0;
+    <div id="datiFinali" style="display: none;">
+        <h2>📊 Dettagli Finali</h2>
+        <p>PRO PREMIUM: <input type="number" id="proPremium" value="0"></p>
+        <p>PRO OMAGGI: <input type="number" id="proOmaggio" value="0"></p>
+        <p>HYPER PREMIUM: <input type="number" id="hyperPremium" value="0"></p>
+        <p>HYPER OMAGGI: <input type="number" id="hyperOmaggio" value="0"></p>
+        <p>Vendite? <select id="haVendite" onchange="toggleVendite()">
+            <option value="no">No</option>
+            <option value="si">Sì</option>
+        </select></p>
+        <div id="venditeDettagli" style="display: none;">
+            <p>Tipo vendite:
+                <select id="tipoVendita">
+                    <option value="pro">PRO</option>
+                    <option value="hyper">HYPER</option>
+                </select>
+            </p>
+            <p>Numero vendite: <input type="number" id="numeroVendite" value="0"></p>
+        </div>
+        <button onclick="generaResoconto()">📋 Genera Resoconto</button>
+        <button onclick="resetDati()">🔄 Reset Dati</button>
+    </div>
 
+    <div id="resocontoFinale"></div>
+
+    <script>
+        let totale = 0, pro = 0, hyper = 0;
+
+        // Funzione per avviare il conteggio
         function avviaConteggio() {
             totale = parseInt(document.getElementById('totaleDispositivi').value) || 0;
             pro = parseInt(document.getElementById('proDispositivi').value) || 0;
             hyper = parseInt(document.getElementById('hyperDispositivi').value) || 0;
 
             if (pro + hyper !== totale) {
-                alert("⚠️ ATTENZIONE: La somma di PRO e HYPER deve essere uguale al totale!");
+                alert("⚠️ La somma di PRO e HYPER deve essere uguale al totale!");
                 return;
             }
 
             document.getElementById('setup').style.display = 'none';
             document.getElementById('conteggio').style.display = 'block';
-
             aggiornaDisplay();
         }
+
+        // Collega l'evento al pulsante "Inizia"
+        document.getElementById('iniziaBtn').addEventListener('click', avviaConteggio);
 
         function modifica(tipo, valore) {
             if (tipo === 'pro') {
@@ -124,16 +145,57 @@
             document.getElementById('contatoreTotale').textContent = nuovoTotale;
 
             if (nuovoTotale === 0) {
-                document.getElementById('totaleFinale').innerHTML = "🎉 Tutti i dispositivi sono stati registrati!";
-            } else {
-                document.getElementById('totaleFinale').innerHTML = `🔥 Dispositivi da registrare: <span id="contatoreTotale">${nuovoTotale}</span>`;
+                document.getElementById('conteggio').style.display = 'none';
+                document.getElementById('datiFinali').style.display = 'block';
             }
+        }
+
+        function toggleVendite() {
+            const opzione = document.getElementById('haVendite').value;
+            document.getElementById('venditeDettagli').style.display = (opzione === 'si') ? 'block' : 'none';
+        }
+
+        function generaResoconto() {
+            const pp = parseInt(document.getElementById('proPremium').value) || 0;
+            const po = parseInt(document.getElementById('proOmaggio').value) || 0;
+            const hp = parseInt(document.getElementById('hyperPremium').value) || 0;
+            const ho = parseInt(document.getElementById('hyperOmaggio').value) || 0;
+
+            const tipoVendita = document.getElementById('tipoVendita').value;
+            const vendite = document.getElementById('haVendite').value === 'si' ? parseInt(document.getElementById('numeroVendite').value) || 0 : 0;
+
+            let proTotale = pp + po + (tipoVendita === 'pro' ? vendite : 0);
+            let hyperTotale = hp + ho + (tipoVendita === 'hyper' ? vendite : 0);
+
+            if (proTotale > parseInt(document.getElementById('proDispositivi').value) ||
+                hyperTotale > parseInt(document.getElementById('hyperDispositivi').value) ||
+                proTotale + hyperTotale > parseInt(document.getElementById('totaleDispositivi').value)) {
+                alert("❌ I numeri inseriti superano i dispositivi iniziali. Controlla premium, omaggi e vendite.");
+                return;
+            }
+
+            let testo = '📄 Resoconto\n';
+            if (pp > 0) testo += `- ${pp} PRO PREMIUM\n`;
+            if (po > 0) testo += `- ${po} PRO OMAGGI\n`;
+            if (hp > 0) testo += `- ${hp} HYPER PREMIUM\n`;
+            if (ho > 0) testo += `- ${ho} HYPER OMAGGI\n`;
+            if (vendite > 0 && tipoVendita === 'pro') testo += `- ${vendite} PRO VENDUTI\n`;
+            if (vendite > 0 && tipoVendita === 'hyper') testo += `- ${vendite} HYPER VENDUTI\n`;
+
+            document.getElementById('resocontoFinale').innerText = testo;
         }
 
         function reset() {
             location.reload();
         }
+
+        function resetDati() {
+            // Mantiene il numero iniziale di dispositivi
+            document.getElementById('proPremium').value = 0;
+            document.getElementById('proOmaggio').value = 0;
+            document.getElementById('hyperPremium').value = 0;
+            document.getElementById('hyperOmaggio').value = 0;
+        }
     </script>
-       
 </body>
 </html>
