@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestione Tempo & Svago</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f6fa;
+            padding: 20px;
+            text-align: center;
+        }
+        h1, h2 { color: #333; }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .date-display {
+            font-size: 1.2em;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .activity-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #ecf0f1;
+            border-radius: 8px;
+        }
+        .activity-label {
+            font-weight: bold;
+            flex: 1;
+            text-align: left;
+        }
+        .time-inputs {
+            flex: 2;
+            text-align: right;
+        }
+        input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #bdc3c7;
+            text-align: center;
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-calcola { background-color: #27ae60; color: white; width: 100%; }
+        .btn-calcola:hover { background-color: #219150; }
+        .btn-back { background-color: #95a5a6; color: white; margin-bottom: 20px; }
+        
+        #risultato {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #dff9fb;
+            border: 2px solid #badc58;
+            border-radius: 8px;
+            display: none;
+        }
+        #risultato h3 { margin: 0; color: #2ecc71; }
+        #svagoTempo { font-size: 2em; color: #2c3e50; display: block; margin: 10px 0; }
+
+        /* Stile Storico */
+        #storicoContainer { margin-top: 40px; text-align: left; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #34495e; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .btn-delete { background-color: #e74c3c; padding: 5px 10px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <button class="btn-back" onclick="history.back()">🔙 Torna indietro</button>
+
+    <div class="container">
+        <h1>⏱️ Diario Attività & Svago</h1>
+        <div class="date-display" id="dataOggi"></div>
+
+        <div class="activity-row">
+            <span class="activity-label">📚 Studio</span>
+            <div class="time-inputs">
+                <input type="number" id="studioH" placeholder="Ore" min="0"> h :
+                <input type="number" id="studioM" placeholder="Min" min="0" max="59"> m
+            </div>
+        </div>
+
+        <div class="activity-row">
+            <span class="activity-label">📖 Lettura</span>
+            <div class="time-inputs">
+                <input type="number" id="letturaH" placeholder="Ore" min="0"> h :
+                <input type="number" id="letturaM" placeholder="Min" min="0" max="59"> m
+            </div>
+        </div>
+
+        <div class="activity-row">
+            <span class="activity-label">🏋️ Allenamento</span>
+            <div class="time-inputs">
+                <input type="number" id="allenamentoH" placeholder="Ore" min="0"> h :
+                <input type="number" id="allenamentoM" placeholder="Min" min="0" max="59"> m
+            </div>
+        </div>
+
+        <button class="btn-calcola" onclick="calcolaESalva()">💾 Calcola e Salva</button>
+
+        <div id="risultato">
+            <h3>🎮 Tempo guadagnato per lo Svago:</h3>
+            <span id="svagoTempo">0h 00m</span>
+            <small>Somma totale di Studio + Lettura + Allenamento</small>
+        </div>
+
+        <div id="storicoContainer">
+            <h3>📅 Storico Giorni Precedenti</h3>
+            <table id="tabellaStorico">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Totale Produttivo</th>
+                        <th>Azione</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+            <button onclick="pulisciStorico()" style="background-color: #c0392b; width: 100%; margin-top:10px;">🗑️ Cancella tutto lo storico</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. Mostra la data di oggi all'avvio
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const oggi = new Date();
+        document.getElementById('dataOggi').innerText = oggi.toLocaleDateString('it-IT', options);
+        
+        // Carica lo storico all'avvio
+        caricaStorico();
+
+        function calcolaESalva() {
+            // Recupera valori (se vuoto mette 0)
+            const sH = parseInt(document.getElementById('studioH').value) || 0;
+            const sM = parseInt(document.getElementById('studioM').value) || 0;
+            const lH = parseInt(document.getElementById('letturaH').value) || 0;
+            const lM = parseInt(document.getElementById('letturaM').value) || 0;
+            const aH = parseInt(document.getElementById('allenamentoH').value) || 0;
+            const aM = parseInt(document.getElementById('allenamentoM').value) || 0;
+
+            // Calcolo totale in minuti
+            const totaleMinuti = (sH * 60 + sM) + (lH * 60 + lM) + (aH * 60 + aM);
+
+            // Riconversione in Ore e Minuti
+            const oreTotali = Math.floor(totaleMinuti / 60);
+            const minutiTotali = totaleMinuti % 60;
+
+            // Formattazione stringa (es. 05)
+            const minFormat = minutiTotali < 10 ? '0' + minutiTotali : minutiTotali;
+            const stringaTempo = `${oreTotali}h ${minFormat}m`;
+
+            // Mostra risultato a video
+            document.getElementById('svagoTempo').innerText = stringaTempo;
+            document.getElementById('risultato').style.display = 'block';
+
+            // Salvataggio nel Local Storage
+            salvaNelDatabase(stringaTempo, totaleMinuti);
+        }
+
+        function salvaNelDatabase(displayTime, rawMinutes) {
+            if(rawMinutes === 0) return; // Non salvare se è tutto 0
+
+            const dataCorrente = new Date().toLocaleDateString('it-IT');
+            let storico = JSON.parse(localStorage.getItem('diarioSvago')) || [];
+
+            // Controlla se esiste già un salvataggio per oggi, se sì lo aggiorna, altrimenti ne crea uno nuovo
+            const indiceOggi = storico.findIndex(item => item.data === dataCorrente);
+
+            if (indiceOggi !== -1) {
+                // Aggiorna oggi
+                storico[indiceOggi].tempo = displayTime;
+            } else {
+                // Nuovo giorno
+                storico.push({
+                    data: dataCorrente,
+                    tempo: displayTime
+                });
+            }
+
+            localStorage.setItem('diarioSvago', JSON.stringify(storico));
+            caricaStorico(); // Aggiorna la tabella
+        }
+
+        function caricaStorico() {
+            const storico = JSON.parse(localStorage.getItem('diarioSvago')) || [];
+            const tbody = document.querySelector('#tabellaStorico tbody');
+            tbody.innerHTML = ''; // Pulisce tabella
+
+            // Ordina dal più recente
+            storico.reverse().forEach((record, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${record.data}</td>
+                    <td>${record.tempo}</td>
+                    <td><button class="btn-delete" onclick="eliminaRiga(${index})">❌</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function eliminaRiga(index) {
+            let storico = JSON.parse(localStorage.getItem('diarioSvago')) || [];
+            // Poiché abbiamo invertito la visualizzazione, l'indice reale è: lunghezza - 1 - index
+            const realIndex = storico.length - 1 - index;
+            
+            storico.splice(realIndex, 1);
+            localStorage.setItem('diarioSvago', JSON.stringify(storico));
+            caricaStorico();
+        }
+
+        function pulisciStorico() {
+            if(confirm("Sei sicuro di voler cancellare tutto lo storico?")) {
+                localStorage.removeItem('diarioSvago');
+                caricaStorico();
+            }
+        }
+    </script>
+</body>
+</html>
