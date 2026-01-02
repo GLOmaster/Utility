@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Gestione Tempo & Svago</title>
+    <title>Gestione Tempo & Valore</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -12,7 +12,7 @@
         }
         h1, h2 { color: #333; }
         .container {
-            max-width: 600px;
+            max-width: 700px; /* Allargato leggermente per la tabella */
             margin: 0 auto;
             background: white;
             padding: 20px;
@@ -33,6 +33,11 @@
             padding: 10px;
             background: #ecf0f1;
             border-radius: 8px;
+        }
+        /* Stile specifico per la riga Svago per distinguerla */
+        .svago-row {
+            background: #fff3cd; /* Giallo chiaro */
+            border: 1px solid #ffeeba;
         }
         .activity-label {
             font-weight: bold;
@@ -71,15 +76,20 @@
             display: none;
         }
         #risultato h3 { margin: 0; color: #2ecc71; }
-        #svagoTempo { font-size: 2em; color: #2c3e50; display: block; margin: 10px 0; }
+        #valoreNettoDisplay { font-size: 2em; display: block; margin: 10px 0; font-weight: bold; }
 
         /* Stile Storico */
         #storicoContainer { margin-top: 40px; text-align: left; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         th { background-color: #34495e; color: white; }
         tr:nth-child(even) { background-color: #f2f2f2; }
-        .btn-delete { background-color: #e74c3c; padding: 5px 10px; font-size: 12px; }
+        .btn-delete { background-color: #e74c3c; padding: 5px 10px; font-size: 12px; color: white; border-radius: 4px; }
+        
+        /* Colori per il valore aggiunto */
+        .positive { color: #27ae60; font-weight: bold; }
+        .negative { color: #e74c3c; font-weight: bold; }
+        .neutral { color: #7f8c8d; }
     </style>
 </head>
 <body>
@@ -87,7 +97,7 @@
     <button class="btn-back" onclick="history.back()">🔙 Torna indietro</button>
 
     <div class="container">
-        <h1>⏱️ Diario Attività & Svago</h1>
+        <h1>⚖️ Bilancio Produttività vs Svago</h1>
         <div class="date-display" id="dataOggi"></div>
 
         <div class="activity-row">
@@ -114,12 +124,22 @@
             </div>
         </div>
 
-        <button class="btn-calcola" onclick="calcolaESalva()">💾 Calcola e Salva</button>
+        <hr style="border: 0; border-top: 1px solid #ddd; margin: 15px 0;">
+
+        <div class="activity-row svago-row">
+            <span class="activity-label">🎮 Svago / Gioco</span>
+            <div class="time-inputs">
+                <input type="number" id="svagoH" placeholder="Ore" min="0"> h :
+                <input type="number" id="svagoM" placeholder="Min" min="0" max="59"> m
+            </div>
+        </div>
+
+        <button class="btn-calcola" onclick="calcolaESalva()">💾 Calcola Bilancio</button>
 
         <div id="risultato">
-            <h3>🎮 Tempo guadagnato per lo Svago:</h3>
-            <span id="svagoTempo">0h 00m</span>
-            <small>Somma totale di Studio + Lettura + Allenamento</small>
+            <h3>📊 Valore Aggiunto Giornaliero:</h3>
+            <span id="valoreNettoDisplay">0h 00m</span>
+            <small id="dettaglioCalcolo"></small>
         </div>
 
         <div id="storicoContainer">
@@ -128,14 +148,16 @@
                 <thead>
                     <tr>
                         <th>Data</th>
-                        <th>Totale Produttivo</th>
+                        <th>Produttività</th>
+                        <th>Gioco</th>
+                        <th>Valore Aggiunto</th>
                         <th>Azione</th>
                     </tr>
                 </thead>
                 <tbody>
                     </tbody>
             </table>
-            <button onclick="pulisciStorico()" style="background-color: #c0392b; width: 100%; margin-top:10px;">🗑️ Cancella tutto lo storico</button>
+            <button onclick="pulisciStorico()" style="background-color: #c0392b; width: 100%; margin-top:10px; color: white;">🗑️ Cancella tutto lo storico</button>
         </div>
     </div>
 
@@ -148,8 +170,25 @@
         // Carica lo storico all'avvio
         caricaStorico();
 
+        function convertiMinutiInStringa(minutiTotali) {
+            const segno = minutiTotali < 0 ? "-" : "+";
+            const absMinuti = Math.abs(minutiTotali);
+            const ore = Math.floor(absMinuti / 60);
+            const minuti = absMinuti % 60;
+            const minFormat = minuti < 10 ? '0' + minuti : minuti;
+            return `${segno}${ore}h ${minFormat}m`;
+        }
+        
+        // Funzione semplice senza segno per i totali assoluti
+        function formattaOrario(minutiTotali) {
+            const ore = Math.floor(minutiTotali / 60);
+            const minuti = minutiTotali % 60;
+            const minFormat = minuti < 10 ? '0' + minuti : minuti;
+            return `${ore}h ${minFormat}m`;
+        }
+
         function calcolaESalva() {
-            // Recupera valori (se vuoto mette 0)
+            // Recupera valori Produttività
             const sH = parseInt(document.getElementById('studioH').value) || 0;
             const sM = parseInt(document.getElementById('studioM').value) || 0;
             const lH = parseInt(document.getElementById('letturaH').value) || 0;
@@ -157,60 +196,92 @@
             const aH = parseInt(document.getElementById('allenamentoH').value) || 0;
             const aM = parseInt(document.getElementById('allenamentoM').value) || 0;
 
-            // Calcolo totale in minuti
-            const totaleMinuti = (sH * 60 + sM) + (lH * 60 + lM) + (aH * 60 + aM);
+            // Recupera valori Svago
+            const gH = parseInt(document.getElementById('svagoH').value) || 0;
+            const gM = parseInt(document.getElementById('svagoM').value) || 0;
 
-            // Riconversione in Ore e Minuti
-            const oreTotali = Math.floor(totaleMinuti / 60);
-            const minutiTotali = totaleMinuti % 60;
+            // Calcoli in minuti
+            const minutiProduttivi = (sH * 60 + sM) + (lH * 60 + lM) + (aH * 60 + aM);
+            const minutiSvago = (gH * 60 + gM);
+            const differenza = minutiProduttivi - minutiSvago;
 
-            // Formattazione stringa (es. 05)
-            const minFormat = minutiTotali < 10 ? '0' + minutiTotali : minutiTotali;
-            const stringaTempo = `${oreTotali}h ${minFormat}m`;
+            // Generazione Stringhe
+            const strProduttivi = formattaOrario(minutiProduttivi);
+            const strSvago = formattaOrario(minutiSvago);
+            const strDifferenza = convertiMinutiInStringa(differenza);
 
             // Mostra risultato a video
-            document.getElementById('svagoTempo').innerText = stringaTempo;
+            const display = document.getElementById('valoreNettoDisplay');
+            const dettaglio = document.getElementById('dettaglioCalcolo');
+            
+            display.innerText = strDifferenza;
+            
+            // Colore dinamico del risultato
+            if(differenza > 0) display.style.color = "#27ae60"; // Verde
+            else if(differenza < 0) display.style.color = "#e74c3c"; // Rosso
+            else display.style.color = "#333";
+
+            dettaglio.innerText = `(Produttività: ${strProduttivi} - Gioco: ${strSvago})`;
             document.getElementById('risultato').style.display = 'block';
 
             // Salvataggio nel Local Storage
-            salvaNelDatabase(stringaTempo, totaleMinuti);
+            salvaNelDatabase(strProduttivi, strSvago, strDifferenza, differenza);
         }
 
-        function salvaNelDatabase(displayTime, rawMinutes) {
-            if(rawMinutes === 0) return; // Non salvare se è tutto 0
-
+        function salvaNelDatabase(strProd, strSvago, strDiff, rawDiff) {
             const dataCorrente = new Date().toLocaleDateString('it-IT');
             let storico = JSON.parse(localStorage.getItem('diarioSvago')) || [];
 
-            // Controlla se esiste già un salvataggio per oggi, se sì lo aggiorna, altrimenti ne crea uno nuovo
+            // Oggetto da salvare
+            const nuovoRecord = {
+                data: dataCorrente,
+                tempoProduttivo: strProd,
+                tempoSvago: strSvago,
+                differenza: strDiff,
+                rawValore: rawDiff // Utile per colorare la tabella
+            };
+
             const indiceOggi = storico.findIndex(item => item.data === dataCorrente);
 
             if (indiceOggi !== -1) {
-                // Aggiorna oggi
-                storico[indiceOggi].tempo = displayTime;
+                storico[indiceOggi] = nuovoRecord; // Aggiorna oggi
             } else {
-                // Nuovo giorno
-                storico.push({
-                    data: dataCorrente,
-                    tempo: displayTime
-                });
+                storico.push(nuovoRecord); // Nuovo giorno
             }
 
             localStorage.setItem('diarioSvago', JSON.stringify(storico));
-            caricaStorico(); // Aggiorna la tabella
+            caricaStorico(); 
         }
 
         function caricaStorico() {
             const storico = JSON.parse(localStorage.getItem('diarioSvago')) || [];
             const tbody = document.querySelector('#tabellaStorico tbody');
-            tbody.innerHTML = ''; // Pulisce tabella
+            tbody.innerHTML = ''; 
 
-            // Ordina dal più recente
             storico.reverse().forEach((record, index) => {
                 const tr = document.createElement('tr');
+                
+                // Compatibilità con vecchi dati (se non c'era la struttura nuova)
+                const prod = record.tempoProduttivo || record.tempo || "0h 00m";
+                const svago = record.tempoSvago || "0h 00m";
+                let diff = record.differenza;
+                let classeColore = "neutral";
+
+                // Se è un vecchio dato senza differenza calcolata, usiamo il produttivo come diff positiva
+                if (!diff) {
+                    diff = "+" + prod; 
+                    classeColore = "positive";
+                } else {
+                    // Determina colore in base al valore raw o stringa
+                    if (diff.includes("-")) classeColore = "negative";
+                    else if (diff.includes("+") && diff !== "+0h 00m") classeColore = "positive";
+                }
+
                 tr.innerHTML = `
                     <td>${record.data}</td>
-                    <td>${record.tempo}</td>
+                    <td>${prod}</td>
+                    <td>${svago}</td>
+                    <td class="${classeColore}">${diff}</td>
                     <td><button class="btn-delete" onclick="eliminaRiga(${index})">❌</button></td>
                 `;
                 tbody.appendChild(tr);
@@ -219,9 +290,7 @@
 
         function eliminaRiga(index) {
             let storico = JSON.parse(localStorage.getItem('diarioSvago')) || [];
-            // Poiché abbiamo invertito la visualizzazione, l'indice reale è: lunghezza - 1 - index
             const realIndex = storico.length - 1 - index;
-            
             storico.splice(realIndex, 1);
             localStorage.setItem('diarioSvago', JSON.stringify(storico));
             caricaStorico();
