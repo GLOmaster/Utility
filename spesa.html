@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Spesa Smart Privata v3</title>
+    <title>Spesa Smart Pro v4</title>
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <style>
-        /* Stili Generali */
+        /* --- STILI GENERALI --- */
         * { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; background: #f0f2f5; color: #333; height: 100vh; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; background: #f0f2f5; color: #333; min-height: 100vh; }
         
         /* --- SCHERMATA LOGIN --- */
         #login-screen {
@@ -17,78 +17,88 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             z-index: 9999;
         }
-        .login-box { background: white; padding: 30px; border-radius: 12px; text-align: center; width: 80%; max-width: 300px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .login-box input { width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
-        .login-box button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .login-box { background: white; padding: 30px; border-radius: 12px; text-align: center; width: 85%; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .login-box input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; text-align: center; letter-spacing: 2px;}
+        .login-box button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold;}
 
         /* --- CONTENUTO APP --- */
-        #app-content { display: none; padding: 15px; max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
+        #app-content { display: none; padding: 15px; max-width: 600px; margin: 0 auto; padding-bottom: 60px; }
 
-        h1 { text-align: center; color: #444; margin-bottom: 20px; font-size: 1.8rem;}
+        h1 { text-align: center; color: #444; margin-bottom: 20px; font-size: 1.8rem; margin-top: 10px;}
         
         /* --- VIDEOCAMERA --- */
         #camera-container { display: none; text-align: center; margin-bottom: 20px; position: relative; }
-        .video-wrapper { position: relative; display: inline-block; width: 100%; max-width: 450px; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: #000; }
+        .video-wrapper { 
+            position: relative; display: inline-block; width: 100%; max-width: 450px; 
+            overflow: hidden; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: #000; 
+        }
         video { width: 100%; display: block; }
         
+        /* MIRINO ROSSO */
         #viewfinder {
-            position: absolute; top: 50%; left: 50%; width: 70%; height: 25%;
+            position: absolute; top: 50%; left: 50%; 
+            width: 70%; height: 25%; /* Area di ritaglio */
             transform: translate(-50%, -50%);
             border: 3px solid #ff3b30;
-            box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6); /* Oscura l'esterno */
             border-radius: 8px; pointer-events: none;
         }
-        #viewfinder::after { content: 'PREZZO QUI'; position: absolute; top: -25px; width: 100%; text-align: center; color: #ff3b30; font-weight: bold; font-size: 0.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+        #viewfinder::after { 
+            content: 'INQUADRA PREZZO QUI'; position: absolute; top: -25px; width: 100%; text-align: center; 
+            color: #ff3b30; font-weight: bold; font-size: 0.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); 
+        }
 
         /* --- CONTROLLI --- */
         .controls-group { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px;}
         .flex-row { display: flex; gap: 10px; margin-bottom: 10px; }
         input, button { padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #ddd; width: 100%; }
-        button { background: #007bff; color: white; border: none; font-weight: 600; cursor: pointer; }
+        input:focus { outline: 2px solid #007bff; border-color: transparent; }
+        button { background: #007bff; color: white; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
+
         .btn-camera-start { background: #ff9f43; color: #fff; }
         .btn-snap { background: #ff3b30; margin-top: 10px;}
         .btn-stop { background: #6c757d; margin-top: 5px;}
-        
-        /* BOTTONE INDIETRO */
-        .btn-back { background: #343a40; margin-top: 30px; border-radius: 50px; } /* Grigio scuro, arrotondato */
+        .btn-back { background: #343a40; margin-top: 30px; border-radius: 50px; }
 
-        /* --- LISTA --- */
+        /* --- LISTA SPESA --- */
         ul { list-style: none; padding: 0; margin: 20px 0; }
-        li { background: #fff; padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        li { background: #fff; padding: 12px 15px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         
         .item-info { display: flex; flex-direction: column; }
-        .item-name { font-weight: 500; color: #333; }
-        .item-price { font-weight: bold; color: #007bff; font-size: 1.1rem; }
+        .item-name { font-weight: 500; color: #333; font-size: 0.95rem; }
+        .item-price { font-weight: 800; color: #007bff; font-size: 1.1rem; }
 
         /* Tasto elimina X */
         .btn-delete {
             background: #ff3b30; color: white; border: none;
-            width: 30px; height: 30px; border-radius: 50%;
+            width: 32px; height: 32px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-weight: bold; margin-left: 15px; cursor: pointer; flex-shrink: 0;
-            padding: 0;
+            font-weight: bold; margin-left: 15px; cursor: pointer; flex-shrink: 0; padding: 0;
+            font-size: 1.2rem;
         }
         
         /* --- TOTALI --- */
-        .totals { background: #2d3436; color: #fff; padding: 20px; border-radius: 12px; margin-top: 20px; }
+        .totals { background: #2d3436; color: #fff; padding: 20px; border-radius: 12px; margin-top: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
         .total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;}
-        .big-text { font-size: 1.4em; font-weight: 700; }
-        .payment-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; font-weight: bold;}
+        .big-text { font-size: 1.5em; font-weight: 700; }
+        .payment-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; font-weight: bold; font-size: 1.1rem;}
+        .payment-input::placeholder { color: rgba(255,255,255,0.4); }
         .resto-box { text-align: center; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-top: 15px;}
         
-        #loading-msg { text-align: center; color: #ff3b30; font-weight: bold; display: none; margin-top: 10px; }
-        #error-msg { color: red; display: none; margin-top: 10px; }
+        #loading-msg { text-align: center; color: #ff3b30; font-weight: bold; display: none; margin-top: 10px; font-size: 0.9rem; }
+        #error-msg { color: #ff3b30; display: none; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="login-screen">
         <div class="login-box">
-            <h2>🔒 Area Riservata</h2>
-            <p>Inserisci PIN</p>
+            <h2>🔒 Area Privata</h2>
+            <p style="color:#666; margin-bottom: 5px;">Inserisci Password</p>
             <input type="password" id="password-input" placeholder="****" onkeyup="checkEnter(event)">
-            <button onclick="checkPassword()">Accedi</button>
-            <p id="error-msg">Password Errata</p>
+            <button onclick="checkPassword()">ENTRA</button>
+            <p id="error-msg">Password Errata!</p>
         </div>
     </div>
 
@@ -100,56 +110,60 @@
                 <video id="video" playsinline autoplay></video>
                 <div id="viewfinder"></div>
             </div>
-            <p id="loading-msg">⏳ Analisi in corso...</p>
-            <button class="btn-snap" onclick="catturaAreaMirino()">📸 Scatta e Leggi</button>
+            <p id="loading-msg">⏳ Ottimizzazione immagine e lettura...</p>
+            
+            <button class="btn-snap" onclick="catturaAreaMirino()">📸 SCATTA E LEGGI</button>
             <button class="btn-stop" onclick="stopCamera()">Chiudi Camera</button>
+            
             <canvas id="canvas" style="display:none;"></canvas>
         </div>
 
         <div class="controls-group">
-            <button class="btn-camera-start" onclick="startCamera()">📱 Apri Scanner</button>
+            <button class="btn-camera-start" onclick="startCamera()">📱 Apri Scanner Prezzo</button>
         </div>
         
         <div class="controls-group">
             <div class="flex-row">
-                <input type="text" id="nomeProdotto" placeholder="Prodotto" style="flex: 2;">
+                <input type="text" id="nomeProdotto" placeholder="Nome (opz.)" style="flex: 2;">
                 <input type="number" id="prezzoProdotto" placeholder="0.00" step="0.01" style="flex: 1.5; font-weight: bold;">
             </div>
-            <button onclick="aggiungiProdotto()">Aggiungi ⬇️</button>
+            <button onclick="aggiungiProdotto()">Aggiungi alla Lista ⬇️</button>
         </div>
 
-        <ul id="lista-spesa"></ul>
+        <ul id="lista-spesa">
+            </ul>
 
         <div class="totals">
             <div class="total-row">
                 <span>TOTALE:</span>
                 <span class="big-text">€ <span id="totale">0.00</span></span>
             </div>
-            <hr style="border-color: rgba(255,255,255,0.2);">
-            <div style="margin-bottom: 10px;">Pago con:</div>
-            <input type="number" id="pagamento" class="payment-input" placeholder="Es. 50" step="0.50" oninput="calcolaResto()">
+            <hr style="border-color: rgba(255,255,255,0.1);">
+            <div style="margin-bottom: 8px; font-size: 0.9rem; color: #ccc;">Pagamento con:</div>
+            <input type="number" id="pagamento" class="payment-input" placeholder="Es. 50.00" step="0.50" oninput="calcolaResto()">
             
             <div class="resto-box">
                 RESTO: <span class="big-text">€ <span id="resto">0.00</span></span>
             </div>
         </div>
 
-        <button class="btn-back" onclick="vaiHome()">⬅ Esci / Home</button>
-
+        <button class="btn-back" onclick="vaiHome()">⬅ Esci / Reset</button>
     </div>
 
     <script>
-        // --- PASSWORD (MODIFICA QUI) ---
-        const PASSWORD_SEGRETA = "1234";
+        // --- CONFIGURAZIONE PASSWORD ---
+        const PASSWORD_SEGRETA = "1234"; // <--- Cambia la tua password qui
 
-        // --- LOGIN ---
+        // --- GESTIONE LOGIN ---
         function checkPassword() {
             const input = document.getElementById('password-input').value;
             if (input === PASSWORD_SEGRETA) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-content').style.display = 'block';
             } else {
-                document.getElementById('error-msg').style.display = 'block';
+                const err = document.getElementById('error-msg');
+                err.style.display = 'block';
+                setTimeout(() => err.style.display = 'none', 2000);
             }
         }
         function checkEnter(e) { if (e.key === "Enter") checkPassword(); }
@@ -161,57 +175,119 @@
         const loadingMsg = document.getElementById('loading-msg');
         let streamVideo = null;
 
-        // --- NAVIGAZIONE ---
-        function vaiHome() {
-            if(confirm("Vuoi uscire? I dati non salvati andranno persi.")) {
-                window.location.href = "index.html";
+        // --- FOTOCAMERA ---
+        async function startCamera() {
+            // Nascondiamo tutto tranne la camera
+            document.getElementById('camera-container').style.display = 'block';
+            document.querySelectorAll('.controls-group, .totals, #lista-spesa, .btn-back').forEach(el => el.style.display = 'none');
+            
+            try {
+                // Richiede fotocamera posteriore in alta risoluzione
+                streamVideo = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1920 }, 
+                        height: { ideal: 1080 } 
+                    }
+                });
+                video.srcObject = streamVideo;
+            } catch (err) {
+                alert("Errore accesso fotocamera: " + err.message);
+                stopCamera();
             }
         }
 
-        // --- FOTOCAMERA E OCR ---
-        async function startCamera() {
-            document.getElementById('camera-container').style.display = 'block';
-            document.querySelectorAll('.controls-group, .totals, #lista-spesa, .btn-back').forEach(el => el.style.display = 'none');
-            try {
-                streamVideo = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-                });
-                video.srcObject = streamVideo;
-            } catch (err) { alert("Errore fotocamera"); stopCamera(); }
-        }
-
         function stopCamera() {
-            if (streamVideo) streamVideo.getTracks().forEach(track => track.stop());
+            if (streamVideo) {
+                streamVideo.getTracks().forEach(track => track.stop());
+                streamVideo = null;
+            }
             document.getElementById('camera-container').style.display = 'none';
+            // Mostriamo di nuovo l'app
             document.querySelectorAll('.controls-group, .totals, #lista-spesa, .btn-back').forEach(el => el.style.display = 'block');
         }
 
+        // --- NUOVO SISTEMA DI CATTURA (POTENZIATO) ---
         function catturaAreaMirino() {
             if (!video.videoWidth) return;
             loadingMsg.style.display = 'block';
-            const vW = video.videoWidth, vH = video.videoHeight;
-            const sW = vW * 0.70, sH = vH * 0.25;
-            const sX = (vW - sW) / 2, sY = (vH - sH) / 2;
+
+            // Dimensioni originali video
+            const vW = video.videoWidth;
+            const vHeight = video.videoHeight;
             
-            canvas.width = sW; canvas.height = sH;
-            canvas.getContext('2d').drawImage(video, sX, sY, sW, sH, 0, 0, sW, sH);
+            // Ritaglio basato sulle percentuali CSS del #viewfinder (70% larghezza, 25% altezza)
+            const sW = vW * 0.70;
+            const sH = vHeight * 0.25;
+            const sX = (vW - sW) / 2;
+            const sY = (vHeight - sH) / 2;
             
-            Tesseract.recognize(canvas, 'eng', { tessedit_char_whitelist: '0123456789.,€' })
-                .then(({ data: { text } }) => {
-                    loadingMsg.style.display = 'none';
-                    estraiPrezzo(text);
-                    stopCamera();
-                }).catch(() => { loadingMsg.style.display = 'none'; stopCamera(); });
+            // Setup Canvas
+            canvas.width = sW;
+            canvas.height = sH;
+            const ctx = canvas.getContext('2d');
+
+            // 1. Disegna l'immagine originale
+            ctx.drawImage(video, sX, sY, sW, sH, 0, 0, sW, sH);
+
+            // 2. FILTRO ALTO CONTRASTO (Binarizzazione)
+            // Prende i dati dei pixel per manipolarli
+            let imageData = ctx.getImageData(0, 0, sW, sH);
+            let data = imageData.data;
+            
+            // Ciclo su ogni pixel
+            for (let i = 0; i < data.length; i += 4) {
+                // Calcola media luminosità (Grayscale)
+                let avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                
+                // SOGLIA: Se > 110 diventa BIANCO PURO, altrimenti NERO PURO
+                // Questo pulisce il "grigio" dell'etichetta
+                let color = avg > 110 ? 255 : 0; 
+                
+                data[i] = color;     // Red
+                data[i + 1] = color; // Green
+                data[i + 2] = color; // Blue
+            }
+            // Rimette l'immagine elaborata sul canvas
+            ctx.putImageData(imageData, 0, 0);
+
+            // 3. OCR con parametri ottimizzati
+            Tesseract.recognize(
+                canvas,
+                'eng',
+                { 
+                    // Cerca solo numeri, punti e simbolo Euro
+                    tessedit_char_whitelist: '0123456789.,€',
+                    // PSM 7 = Tratta l'immagine come una singola riga di testo (molto più preciso per prezzi)
+                    tessedit_pageseg_mode: '7' 
+                }
+            ).then(({ data: { text } }) => {
+                loadingMsg.style.display = 'none';
+                estraiPrezzo(text);
+                stopCamera();
+            }).catch(err => {
+                loadingMsg.style.display = 'none';
+                alert("Errore lettura OCR. Riprova.");
+                stopCamera();
+            });
         }
 
+        // --- ANALISI TESTO ---
         function estraiPrezzo(testo) {
+            // Pulisce spazi e simboli valuta
             let t = testo.replace(/[\n\r\s€$£]/g, '');
+            // Cerca pattern tipo 10.99 o 10,99
             const match = t.match(/(\d{1,4}[.,]\d{2})(?![\d])/);
+            
             if (match) {
-                document.getElementById('prezzoProdotto').value = match[0].replace(',', '.');
+                // Sostituisce virgola con punto
+                let prezzoClean = match[0].replace(',', '.');
+                document.getElementById('prezzoProdotto').value = prezzoClean;
+                
+                // Feedback vibrazione
                 if (navigator.vibrate) navigator.vibrate(200);
             } else {
-                alert("Prezzo non riconosciuto. Riprova.");
+                alert("Prezzo non chiaro.\nSuggerimento: Avvicinati, evita riflessi e inquadra SOLO i numeri.");
             }
         }
 
@@ -221,10 +297,11 @@
             const pIn = document.getElementById('prezzoProdotto');
             let nome = nIn.value.trim() || "Articolo";
             const prezzo = parseFloat(pIn.value);
-            if (isNaN(prezzo) || prezzo <= 0) return;
+
+            if (isNaN(prezzo) || prezzo <= 0) return; // Non fa nulla se prezzo vuoto
 
             totale += prezzo;
-            
+
             const ul = document.getElementById('lista-spesa');
             const li = document.createElement('li');
             
@@ -236,17 +313,24 @@
                 <button class="btn-delete" onclick="rimuoviProdotto(this, ${prezzo})">✕</button>
             `;
             
+            // Aggiungi in cima
             ul.insertBefore(li, ul.firstChild);
             
             aggiornaTotali();
-            nIn.value = ""; pIn.value = ""; nIn.focus();
+            
+            // Reset campi e focus
+            nIn.value = "";
+            pIn.value = "";
+            nIn.focus();
         }
 
-        function rimuoviProdotto(bottone, prezzoDaTogliere) {
-            if(confirm("Vuoi rimuovere questo articolo?")) {
+        function rimuoviProdotto(btn, prezzoDaTogliere) {
+            if(confirm("Eliminare questo prodotto?")) {
                 totale -= prezzoDaTogliere;
-                if (totale < 0) totale = 0;
-                bottone.parentElement.remove();
+                if(totale < 0) totale = 0;
+                
+                // Rimuove la riga <li>
+                btn.parentElement.remove();
                 aggiornaTotali();
             }
         }
@@ -259,13 +343,30 @@
         function calcolaResto() {
             const pag = parseFloat(document.getElementById('pagamento').value) || 0;
             const restoBox = document.getElementById('resto');
+            const restoWrap = document.querySelector('.resto-box');
+
             if (pag > 0) {
-                const r = pag - totale;
-                restoBox.innerText = r.toFixed(2);
-                restoBox.style.color = r < 0 ? '#ff3b30' : '#2ecc71';
+                const resto = pag - totale;
+                restoBox.innerText = resto.toFixed(2);
+                
+                if (resto < 0) {
+                    restoBox.style.color = '#ff3b30'; // Rosso
+                    restoWrap.style.background = 'rgba(255, 59, 48, 0.1)';
+                    restoBox.innerText = "MANCANO " + Math.abs(resto).toFixed(2);
+                } else {
+                    restoBox.style.color = '#2ecc71'; // Verde
+                    restoWrap.style.background = 'rgba(46, 204, 113, 0.1)';
+                }
             } else {
                 restoBox.innerText = "0.00";
                 restoBox.style.color = "#fff";
+                restoWrap.style.background = 'rgba(255,255,255,0.1)';
+            }
+        }
+        
+        function vaiHome() {
+            if(confirm("Vuoi uscire? I dati verranno resettati.")) {
+                window.location.reload(); // Ricarica la pagina = Logout
             }
         }
     </script>
