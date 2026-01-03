@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spesa Smart OCR + Mirino</title>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <style>
+        /* Reset e stili base */
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 15px; background: #f0f2f5; color: #333; }
+        h1 { text-align: center; color: #444; margin-bottom: 20px; font-size: 1.8rem;}
+        
+        /* --- SEZIONE CAMERA E MIRINO --- */
+        #camera-container { display: none; text-align: center; margin-bottom: 20px; position: relative; }
+        
+        /* Wrapper per sovrapporre elementi al video */
+        .video-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            background: #000;
+        }
+
+        video { width: 100%; display: block; }
+        
+        /* IL MIRINO */
+        #viewfinder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            /* Dimensione del mirino: 70% larghezza, 25% altezza del video */
+            width: 70%;
+            height: 25%;
+            transform: translate(-50%, -50%);
+            border: 3px solid #ff3b30; /* Rosso vivo */
+            box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6); /* Oscura l'esterno */
+            border-radius: 8px;
+            pointer-events: none; /* Lascia passare i click */
+        }
+        #viewfinder::after {
+            content: 'INQUADRA SOLO IL PREZZO QUI';
+            position: absolute;
+            top: -25px;
+            width: 100%;
+            text-align: center;
+            color: #ff3b30;
+            font-weight: bold;
+            font-size: 0.8rem;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        /* --- CONTROLLI E INPUT --- */
+        .controls-group { background: #fff; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px;}
+        .flex-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .flex-row:last-child { margin-bottom: 0; }
+        
+        input, button { padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #ddd; width: 100%; }
+        input:focus { outline: none; border-color: #007bff; }
+        
+        button { background: #007bff; color: white; border: none; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #0069d9; }
+        button:active { transform: scale(0.98); }
+        
+        .btn-camera-start { background: #ff9f43; color: #fff; }
+        .btn-snap { background: #ff3b30; margin-top: 10px;}
+        .btn-stop { background: #6c757d; margin-top: 5px;}
+        
+        /* --- LISTA --- */
+        ul { list-style: none; padding: 0; margin: 20px 0; }
+        li { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); animation: fadeIn 0.3s ease-in; }
+        li span.price { font-weight: bold; color: #007bff; font-size: 1.1rem; }
+        
+        /* --- TOTALI --- */
+        .totals { background: #2d3436; color: #fff; padding: 20px; border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;}
+        .big-text { font-size: 1.4em; font-weight: 700; }
+        hr { border-color: rgba(255,255,255,0.2); margin: 15px 0; }
+        .payment-input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: #fff; font-weight: bold;}
+        .payment-input::placeholder { color: rgba(255,255,255,0.5); }
+        
+        .resto-box { text-align: center; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-top: 15px;}
+        #resto { transition: color 0.3s; }
+        
+        #loading-msg { text-align: center; color: #ff3b30; font-weight: bold; display: none; margin-top: 10px; }
+
+        @keyframes fadeIn { from { opacity:0; transform: translateY(10px);} to { opacity:1; transform: translateY(0);} }
+    </style>
+</head>
+<body>
+
+    <h1>🛒 Spesa Smart</h1>
+
+    <div id="camera-container">
+        <div class="video-wrapper">
+            <video id="video" playsinline autoplay></video>
+            <div id="viewfinder"></div>
+        </div>
+        <p id="loading-msg">⏳ Analisi dell'area rossa...</p>
+        <button class="btn-snap" onclick="catturaAreaMirino()">📸 Scatta e Leggi</button>
+        <button class="btn-stop" onclick="stopCamera()">Chiudi Camera</button>
+        <canvas id="canvas" style="display:none;"></canvas>
+    </div>
+
+    <div class="controls-group">
+        <button class="btn-camera-start" onclick="startCamera()">📱 Apri Scanner Prezzo</button>
+    </div>
+    
+    <div class="controls-group">
+        <div class="flex-row">
+            <input type="text" id="nomeProdotto" placeholder="Prodotto (opz.)" style="flex: 2;">
+            <input type="number" id="prezzoProdotto" placeholder="0.00 €" step="0.01" style="flex: 1.5; font-weight: bold;">
+        </div>
+        <button onclick="aggiungiProdotto()">Aggiungi alla Lista ⬇️</button>
+    </div>
+
+    <ul id="lista-spesa">
+        </ul>
+
+    <div class="totals">
+        <div class="total-row">
+            <span>TOTALE DA PAGARE:</span>
+            <span class="big-text">€ <span id="totale">0.00</span></span>
+        </div>
+        <hr>
+        <div style="margin-bottom: 10px;">Pago con:</div>
+        <input type="number" id="pagamento" class="payment-input" placeholder="Inserisci importo (es. 50)" step="0.50" oninput="calcolaResto()">
+        
+        <div class="resto-box">
+            RESTO: <span class="big-text">€ <span id="resto">0.00</span></span>
+        </div>
+    </div>
+
+    <script>
+        let totale = 0;
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const loadingMsg = document.getElementById('loading-msg');
+        let streamVideo = null;
+
+        // 1. AVVIO FOTOCAMERA
+        async function startCamera() {
+            document.getElementById('camera-container').style.display = 'block';
+            // Nascondi gli altri controlli per focus
+            document.querySelectorAll('.controls-group, .totals, #lista-spesa').forEach(el => el.style.display = 'none');
+
+            try {
+                 // Chiede la fotocamera posteriore con preferenza per alta risoluzione
+                streamVideo = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+                });
+                video.srcObject = streamVideo;
+            } catch (err) {
+                alert("Impossibile accedere alla fotocamera. Assicurati di aver dato i permessi.");
+                stopCamera();
+            }
+        }
+
+        function stopCamera() {
+            if (streamVideo) {
+                streamVideo.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById('camera-container').style.display = 'none';
+             // Mostra di nuovo gli altri controlli
+             document.querySelectorAll('.controls-group, .totals, #lista-spesa').forEach(el => el.style.display = 'block');
+        }
+
+        // 2. RITAGLIO E OCR
+        function catturaAreaMirino() {
+            if (!video.videoWidth) return; // Sicurezza se il video non è pronto
+
+            loadingMsg.style.display = 'block';
+            
+            // Dimensioni reali del video sorgente
+            const vWidth = video.videoWidth;
+            const vHeight = video.videoHeight;
+
+            // --- LOGICA DI RITAGLIO ---
+            // Queste percentuali DEVONO corrispondere a quelle nel CSS del #viewfinder (width: 70%, height: 25%)
+            const cropWidthPct = 0.70;
+            const cropHeightPct = 0.25;
+
+            // Calcola le dimensioni e la posizione del rettangolo da ritagliare dal centro del video
+            const sWidth = vWidth * cropWidthPct;
+            const sHeight = vHeight * cropHeightPct;
+            const sX = (vWidth - sWidth) / 2; // Punto X di inizio taglio
+            const sY = (vHeight - sHeight) / 2; // Punto Y di inizio taglio
+
+            // Imposta il canvas alla dimensione esatta del ritaglio
+            canvas.width = sWidth;
+            canvas.height = sHeight;
+            const ctx = canvas.getContext('2d');
+
+            // Disegna sul canvas SOLO la parte centrale del video
+            // drawImage(source, startX, startY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight)
+            ctx.drawImage(video, sX, sY, sWidth, sHeight, 0, 0, sWidth, sHeight);
+            
+            // Per debug: se vuoi vedere cosa vede l'IA, togli il commento sotto
+            // canvas.style.display = 'block'; return;
+
+            // Esegui OCR sull'immagine ritagliata
+            Tesseract.recognize(
+                canvas,
+                'eng', // 'eng' funziona spesso meglio per i numeri con punti
+                { 
+                    // Tenta di forzare il riconoscimento solo di numeri e punteggiatura
+                    tessedit_char_whitelist: '0123456789.,€' 
+                }
+            ).then(({ data: { text } }) => {
+                loadingMsg.style.display = 'none';
+                // console.log("Testo grezzo ritagliato:", text); // Debug
+                estraiPrezzo(text);
+                stopCamera();
+            }).catch(err => {
+                loadingMsg.style.display = 'none';
+                alert("Errore durante la lettura OCR.");
+                stopCamera();
+            });
+        }
+
+        // 3. LOGICA ESTRAZIONE PREZZO (Regex Migliorata)
+        function estraiPrezzo(testo) {
+            // Pulisce il testo da spazi strani o simboli valuta comuni che potrebbero confondere
+            let testoPulito = testo.replace(/[\n\r\s€$£]/g, '');
+            
+            // Regex per cercare formati prezzo comuni: 10.99, 10,99, 5.00, 120,50
+            // Cerca da 1 a 4 cifre iniziali, seguite da punto o virgola, seguite OBBLIGATORIAMENTE da 2 cifre
+            const regexPattern = /(\d{1,4}[.,]\d{2})(?![\d])/;
+            
+            const match = testoPulito.match(regexPattern);
+            
+            if (match && match[0]) {
+                // Sostituisce eventuale virgola con punto per JavaScript
+                let prezzoTrovato = match[0].replace(',', '.');
+                document.getElementById('prezzoProdotto').value = prezzoTrovato;
+                // Vibrazione di conferma se supportata
+                if (navigator.vibrate) navigator.vibrate(200);
+            } else {
+                alert("Prezzo non riconosciuto nell'area rossa.\nRiprova tenendo la mano ferma e assicurandoti che il prezzo sia BEN illuminato e centrato.");
+            }
+        }
+
+        // 4. GESTIONE LISTA E CALCOLI (Invariata, solo UI migliorata)
+        function aggiungiProdotto() {
+            const nomeInput = document.getElementById('nomeProdotto');
+            const prezzoInput = document.getElementById('prezzoProdotto');
+            let nome = nomeInput.value.trim() || "Articolo generico";
+            const prezzo = parseFloat(prezzoInput.value);
+
+            if (isNaN(prezzo) || prezzo <= 0.01) {
+                alert("Inserisci un prezzo valido (usa il punto per i decimali, es: 1.50)");
+                prezzoInput.focus();
+                return;
+            }
+
+            totale += prezzo;
+            aggiornaDOM(nome, prezzo);
+            
+            nomeInput.value = "";
+            prezzoInput.value = "";
+            nomeInput.focus(); // Rimetti il focus per il prossimo prodotto
+        }
+
+        function aggiornaDOM(nome, prezzo) {
+            const ul = document.getElementById('lista-spesa');
+            const li = document.createElement('li');
+            // Tronca nomi troppo lunghi
+            const nomeCorto = nome.length > 20 ? nome.substring(0, 18) + '...' : nome;
+            
+            li.innerHTML = `<span>${nomeCorto}</span> <span class="price">€ ${prezzo.toFixed(2)}</span>`;
+            // Inserisce in cima alla lista
+            ul.insertBefore(li, ul.firstChild);
+
+            document.getElementById('totale').innerText = totale.toFixed(2);
+            calcolaResto();
+        }
+
+        function calcolaResto() {
+            const pagamentoInput = document.getElementById('pagamento');
+            const pagamento = parseFloat(pagamentoInput.value) || 0;
+            const restoBox = document.getElementById('resto');
+            const restoContainer = document.querySelector('.resto-box');
+
+            if (pagamento > 0) {
+                const resto = pagamento - totale;
+                restoBox.innerText = resto.toFixed(2);
+                
+                if (resto < 0) {
+                    // Mancano soldi: Rosso
+                    restoBox.style.color = '#ff3b30';
+                    restoContainer.style.background = 'rgba(255, 59, 48, 0.1)';
+                    restoBox.innerText = "Mancano " + Math.abs(resto).toFixed(2);
+                } else {
+                    // Resto positivo: Verde
+                    restoBox.style.color = '#2ecc71';
+                    restoContainer.style.background = 'rgba(46, 204, 113, 0.1)';
+                }
+            } else {
+                restoBox.innerText = "0.00";
+                restoBox.style.color = '#fff';
+                restoContainer.style.background = 'rgba(255,255,255,0.1)';
+            }
+        }
+    </script>
+</body>
+</html>
