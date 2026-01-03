@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Spesa Smart Privata v2</title>
+    <title>Spesa Smart Privata v3</title>
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <style>
         /* Stili Generali */
@@ -49,6 +49,9 @@
         .btn-snap { background: #ff3b30; margin-top: 10px;}
         .btn-stop { background: #6c757d; margin-top: 5px;}
         
+        /* BOTTONE INDIETRO */
+        .btn-back { background: #343a40; margin-top: 30px; border-radius: 50px; } /* Grigio scuro, arrotondato */
+
         /* --- LISTA --- */
         ul { list-style: none; padding: 0; margin: 20px 0; }
         li { background: #fff; padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -63,7 +66,7 @@
             width: 30px; height: 30px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-weight: bold; margin-left: 15px; cursor: pointer; flex-shrink: 0;
-            padding: 0; /* Override padding generico */
+            padding: 0;
         }
         
         /* --- TOTALI --- */
@@ -130,6 +133,9 @@
                 RESTO: <span class="big-text">€ <span id="resto">0.00</span></span>
             </div>
         </div>
+
+        <button class="btn-back" onclick="vaiHome()">⬅ Esci / Home</button>
+
     </div>
 
     <script>
@@ -155,10 +161,17 @@
         const loadingMsg = document.getElementById('loading-msg');
         let streamVideo = null;
 
+        // --- NAVIGAZIONE ---
+        function vaiHome() {
+            if(confirm("Vuoi uscire? I dati non salvati andranno persi.")) {
+                window.location.href = "index.html";
+            }
+        }
+
         // --- FOTOCAMERA E OCR ---
         async function startCamera() {
             document.getElementById('camera-container').style.display = 'block';
-            document.querySelectorAll('.controls-group, .totals, #lista-spesa').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.controls-group, .totals, #lista-spesa, .btn-back').forEach(el => el.style.display = 'none');
             try {
                 streamVideo = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
@@ -170,7 +183,7 @@
         function stopCamera() {
             if (streamVideo) streamVideo.getTracks().forEach(track => track.stop());
             document.getElementById('camera-container').style.display = 'none';
-            document.querySelectorAll('.controls-group, .totals, #lista-spesa').forEach(el => el.style.display = 'block');
+            document.querySelectorAll('.controls-group, .totals, #lista-spesa, .btn-back').forEach(el => el.style.display = 'block');
         }
 
         function catturaAreaMirino() {
@@ -215,8 +228,6 @@
             const ul = document.getElementById('lista-spesa');
             const li = document.createElement('li');
             
-            // Creazione HTML con bottone di eliminazione
-            // Nota: passiamo 'this' e il prezzo alla funzione rimuoviProdotto
             li.innerHTML = `
                 <div class="item-info">
                     <span class="item-name">${nome}</span>
@@ -231,20 +242,11 @@
             nIn.value = ""; pIn.value = ""; nIn.focus();
         }
 
-        // --- NUOVA FUNZIONE: RIMUOVI PRODOTTO ---
         function rimuoviProdotto(bottone, prezzoDaTogliere) {
             if(confirm("Vuoi rimuovere questo articolo?")) {
-                // 1. Sottrai dal totale
                 totale -= prezzoDaTogliere;
-                
-                // Evita numeri negativi strani tipo -0.0000001
                 if (totale < 0) totale = 0;
-
-                // 2. Rimuovi l'elemento HTML (il genitore <li> del bottone)
-                const riga = bottone.parentElement;
-                riga.remove();
-
-                // 3. Aggiorna i calcoli
+                bottone.parentElement.remove();
                 aggiornaTotali();
             }
         }
