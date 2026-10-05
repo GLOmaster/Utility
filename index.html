@@ -1,10 +1,34 @@
+<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
   <title>Utility Prezzi</title>
   <style>
-    body { font-family: Arial; text-align: center; padding: 40px; }
-    button { margin: 20px; padding: 15px 30px; font-size: 18px; }
+    body { 
+        font-family: 'Arial', sans-serif; 
+        text-align: center; 
+        padding: 20px; 
+        background: #f0f2f5; /* Risolve il problema dello sfondo nero */
+        color: #333; /* Forza il testo scuro */
+    }
+    h1 { margin-bottom: 5px; }
+    h2 { font-size: 1.2rem; color: #666; margin-bottom: 20px; }
+    .btn-menu { 
+        display: block; 
+        margin: 15px auto; 
+        padding: 15px 20px; 
+        font-size: 18px; 
+        width: 90%; 
+        max-width: 350px; 
+        background: #007bff; 
+        color: white; 
+        border: none; 
+        border-radius: 8px; 
+        cursor: pointer; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .btn-menu:active { transform: scale(0.98); }
+    .section-title { margin-top: 30px; border-bottom: 2px solid #ddd; padding-bottom: 5px; max-width: 350px; margin-left: auto; margin-right: auto; }
   </style>
 </head>
 <body>
@@ -12,16 +36,19 @@
 <h1>Benvenuto 👋</h1>
 <h2>Scegli un'operazione:</h2>
 
-<button onclick="location.href='confronta.html'">Confronta Prodotti</button><br>
+<div class="section-title">🛒 Spesa e Prezzi</div>
+<button class="btn-menu" onclick="location.href='spesa.html'">Lista della Spesa OCR</button>
+<button class="btn-menu" onclick="location.href='confronta.html'">Confronta Prodotti</button>
+<button class="btn-menu" onclick="location.href='prezzo_unitario.html'">Prezzo al Kg/Litro</button>
+<button class="btn-menu" onclick="location.href='sconto.html'">Calcola Sconto</button>
 
-<button onclick="location.href='sconto.html'">Calcola Sconto</button><br>
+<div class="section-title">🏠 Casa e Organizzazione</div>
+<button class="btn-menu" onclick="location.href='scadenze.html'">Scadenze Dispensa</button>
+<button class="btn-menu" onclick="location.href='password.html'">Generatore Password</button>
 
-<button onclick="location.href='GLO.html'">Registrazioni GLO</button><br>
-
-<button onclick="location.href='calcolo_tempo.html'">Calcolo tempo di svago</button><br>
-
-<button onclick="location.href='spesa.html'">Lista della spesa</button>
+<div class="section-title">⏳ Tempo e Lavoro</div>
+<button class="btn-menu" onclick="location.href='calcolo_tempo.html'">Calcolo Tempo di Svago</button>
+<button class="btn-menu" onclick="location.href='GLO.html'">Registrazioni GLO</button>
 
 </body>
 </html>
-
