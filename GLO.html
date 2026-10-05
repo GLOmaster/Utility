@@ -43,6 +43,27 @@
             font-weight: bold;
             white-space: pre-wrap; /* Permette di andare a capo correttamente nel resoconto */
         }
+        
+        /* --- NUOVO LAYOUT ALLINEATO PER I DATI FINALI --- */
+        .input-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            max-width: 450px;
+            margin: 0 auto 15px auto;
+        }
+        .input-row label {
+            text-align: right;
+            margin-right: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            flex: 1;
+        }
+        .input-row input, .input-row select {
+            width: 120px;
+            margin: 0;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -81,132 +102,4 @@
         <button onclick="reset()">🔄 Reset App</button>
     </div>
 
-    <div id="datiFinali" style="display: none;">
-        <h2>📊 Dettagli Finali</h2>
-        <p>HILO COMPENSAZIONE: <input type="number" id="hiloCompensazione" value="0"></p>
-        <p>HILO OMAGGI: <input type="number" id="hiloOmaggio" value="0"></p>
-        <p>HILO PLUS COMPENSAZIONE: <input type="number" id="hiloPlusCompensazione" value="0"></p>
-        <p>HILO PLUS OMAGGI: <input type="number" id="hiloPlusOmaggio" value="0"></p>
-        
-        <p>Ci sono state vendite? 
-            <select id="haVendite" onchange="toggleVendite()">
-                <option value="no">No</option>
-                <option value="si">Sì</option>
-            </select>
-        </p>
-        
-        <div id="venditeDettagli" style="display: none; background: #e8ecef; padding: 10px; border-radius: 8px;">
-            <p>Vendite HILO: <input type="number" id="venditeHilo" value="0"></p>
-            <p>Vendite HILO PLUS: <input type="number" id="venditeHiloPlus" value="0"></p>
-        </div>
-        
-        <button onclick="generaResoconto()">📋 Genera Resoconto</button>
-        <button onclick="resetDati()" style="background-color: #95a5a6;">🔄 Azzera Dati</button>
-    </div>
-
-    <div id="resocontoFinale"></div>
-
-    <script>
-        let totale = 0, numHilo = 0, numHiloPlus = 0;
-
-        // Funzione per avviare il conteggio
-        function avviaConteggio() {
-            totale = parseInt(document.getElementById('totaleDispositivi').value) || 0;
-            numHilo = parseInt(document.getElementById('hiloDispositivi').value) || 0;
-            numHiloPlus = parseInt(document.getElementById('hiloPlusDispositivi').value) || 0;
-
-            if (numHilo + numHiloPlus !== totale) {
-                alert("⚠️ La somma di Hilo e Hilo Plus deve essere uguale al totale!");
-                return;
-            }
-
-            document.getElementById('setup').style.display = 'none';
-            document.getElementById('conteggio').style.display = 'block';
-            aggiornaDisplay();
-        }
-
-        document.getElementById('iniziaBtn').addEventListener('click', avviaConteggio);
-
-        function modifica(tipo, valore) {
-            if (tipo === 'hilo') {
-                if (valore === -1 && numHilo > 0) numHilo--;
-                if (valore === 1) numHilo++;
-            } else if (tipo === 'hiloPlus') {
-                if (valore === -1 && numHiloPlus > 0) numHiloPlus--;
-                if (valore === 1) numHiloPlus++;
-            }
-            aggiornaDisplay();
-        }
-
-        function aggiornaDisplay() {
-            const nuovoTotale = numHilo + numHiloPlus;
-            document.getElementById('contatoreHilo').textContent = numHilo;
-            document.getElementById('contatoreHiloPlus').textContent = numHiloPlus;
-            document.getElementById('contatoreTotale').textContent = nuovoTotale;
-
-            if (nuovoTotale === 0) {
-                document.getElementById('conteggio').style.display = 'none';
-                document.getElementById('datiFinali').style.display = 'block';
-            }
-        }
-
-        function toggleVendite() {
-            const opzione = document.getElementById('haVendite').value;
-            document.getElementById('venditeDettagli').style.display = (opzione === 'si') ? 'block' : 'none';
-        }
-
-        function generaResoconto() {
-            const hComp = parseInt(document.getElementById('hiloCompensazione').value) || 0;
-            const hOmag = parseInt(document.getElementById('hiloOmaggio').value) || 0;
-            const hpComp = parseInt(document.getElementById('hiloPlusCompensazione').value) || 0;
-            const hpOmag = parseInt(document.getElementById('hiloPlusOmaggio').value) || 0;
-
-            const ciSonoVendite = document.getElementById('haVendite').value === 'si';
-            const vHilo = ciSonoVendite ? (parseInt(document.getElementById('venditeHilo').value) || 0) : 0;
-            const vHiloPlus = ciSonoVendite ? (parseInt(document.getElementById('venditeHiloPlus').value) || 0) : 0;
-
-            let totaleUsciteHilo = hComp + hOmag + vHilo;
-            let totaleUsciteHiloPlus = hpComp + hpOmag + vHiloPlus;
-
-            if (totaleUsciteHilo > parseInt(document.getElementById('hiloDispositivi').value) ||
-                totaleUsciteHiloPlus > parseInt(document.getElementById('hiloPlusDispositivi').value) ||
-                (totaleUsciteHilo + totaleUsciteHiloPlus) > parseInt(document.getElementById('totaleDispositivi').value)) {
-                alert("❌ I numeri inseriti superano i dispositivi iniziali registrati nel turno. Controlla compensazioni, omaggi e vendite.");
-                return;
-            }
-
-            let testo = '📄 Resoconto Finale\n';
-            if (hComp > 0) testo += `- ${hComp} HILO COMPENSAZIONE\n`;
-            if (hOmag > 0) testo += `- ${hOmag} HILO OMAGGI\n`;
-            if (hpComp > 0) testo += `- ${hpComp} HILO PLUS COMPENSAZIONE\n`;
-            if (hpOmag > 0) testo += `- ${hpOmag} HILO PLUS OMAGGI\n`;
-            if (vHilo > 0) testo += `- ${vHilo} HILO VENDUTI\n`;
-            if (vHiloPlus > 0) testo += `- ${vHiloPlus} HILO PLUS VENDUTI\n`;
-
-            // Mostra il messaggio se tutto è a zero
-            if(testo === '📄 Resoconto Finale\n') {
-                testo += "Nessun dispositivo registrato in uscita.";
-            }
-
-            document.getElementById('resocontoFinale').innerText = testo;
-        }
-
-        function reset() {
-            location.reload();
-        }
-
-        function resetDati() {
-            // Azzera solo i campi finali mantenendo i dispositivi in memoria
-            document.getElementById('hiloCompensazione').value = 0;
-            document.getElementById('hiloOmaggio').value = 0;
-            document.getElementById('hiloPlusCompensazione').value = 0;
-            document.getElementById('hiloPlusOmaggio').value = 0;
-            document.getElementById('venditeHilo').value = 0;
-            document.getElementById('venditeHiloPlus').value = 0;
-            document.getElementById('haVendite').value = "no";
-            toggleVendite();
-            document.getElementById('resocontoFinale').innerText = "";
-        }
-    </script>
-</body>
-</html>
+    <div id="d
