@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scadenze Dispensa</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #f0f2f5; padding: 20px; text-align: center; color: #333; }
+        input, button { padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #ddd; width: 100%; max-width: 350px; margin-bottom: 10px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .btn-back { background: #343a40; margin-bottom: 20px; }
+        ul { list-style: none; padding: 0; max-width: 350px; margin: 20px auto; text-align: left; }
+        li { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .scaduto { border-left: 5px solid #ff3b30; }
+        .in-scadenza { border-left: 5px solid #ff9f43; }
+        .sicuro { border-left: 5px solid #2ecc71; }
+        .delete-btn { background: #ff3b30; width: 35px; height: 35px; border-radius: 5px; padding: 0; margin: 0; display: flex; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <button class="btn-back" onclick="location.href='index.html'">🔙 Torna al Menù</button>
+    <h1>🥫 Scadenze Dispensa</h1>
+
+    <input type="text" id="nomeProdotto" placeholder="Nome prodotto (es. Latte)">
+    <input type="date" id="dataScadenza">
+    <button onclick="aggiungiProdotto()">➕ Aggiungi alla dispensa</button>
+
+    <ul id="listaScadenze"></ul>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', caricaProdotti);
+
+        function aggiungiProdotto() {
+            const nome = document.getElementById('nomeProdotto').value;
+            const data = document.getElementById('dataScadenza').value;
+            if (!nome || !data) return alert("Inserisci nome e data!");
+
+            const prodotti = JSON.parse(localStorage.getItem('scadenze')) || [];
+            prodotti.push({ nome, data, id: Date.now() });
+            localStorage.setItem('scadenze', JSON.stringify(prodotti));
+            
+            document.getElementById('nomeProdotto').value = '';
+            document.getElementById('dataScadenza').value = '';
+            caricaProdotti();
+        }
+
+        function caricaProdotti() {
+            const lista = document.getElementById('listaScadenze');
+            lista.innerHTML = '';
+            let prodotti = JSON.parse(localStorage.getItem('scadenze')) || [];
+            
+            // Ordina per data più vicina
+            prodotti.sort((a, b) => new Date(a.data) - new Date(b.data));
+
+            const oggi = new Date();
+            oggi.setHours(0,0,0,0);
+
+            prodotti.forEach(p => {
+                const dataScad = new Date(p.data);
+                const diffTempo = dataScad.getTime() - oggi.getTime();
+                const diffGiorni = Math.ceil(diffTempo / (1000 * 3600 * 24));
+
+                let classeStato = 'sicuro';
+                let testoStato = `${diffGiorni} giorni`;
+                
+                if (diffGiorni < 0) { classeStato = 'scaduto'; testoStato = 'SCADUTO'; }
+                else if (diffGiorni <= 3) { classeStato = 'in-scadenza'; }
+
+                const li = document.createElement('li');
+                li.className = classeStato;
+                li.innerHTML = `
+                    <div>
+                        <strong>${p.nome}</strong><br>
+                        <small style="color: #666;">Scade il: ${dataScad.toLocaleDateString('it-IT')} (${testoStato})</small>
+                    </div>
+                    <button class="delete-btn" onclick="eliminaProdotto(${p.id})">🗑️</button>
+                `;
+                lista.appendChild(li);
+            });
+        }
+
+        function eliminaProdotto(id) {
+            let prodotti = JSON.parse(localStorage.getItem('scadenze')) || [];
+            prodotti = prodotti.filter(p => p.id !== id);
+            localStorage.setItem('scadenze', JSON.stringify(prodotti));
+            caricaProdotti();
+        }
+    </script>
+</body>
+</html>
