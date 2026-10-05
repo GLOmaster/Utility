@@ -2,35 +2,181 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Scadenze Dispensa</title>
+    <!-- Libreria per OCR (lettura testo da immagine) -->
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <style>
-        body { font-family: 'Arial', sans-serif; background: #f0f2f5; padding: 20px; text-align: center; color: #333; }
-        input, button { padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #ddd; width: 100%; max-width: 350px; margin-bottom: 10px; box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; background: #f0f2f5; padding: 20px; text-align: center; color: #333; margin: 0; }
+        .container { max-width: 450px; margin: 0 auto; }
+        input, button { padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #ddd; width: 100%; margin-bottom: 10px; box-sizing: border-box; }
         button { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
         .btn-back { background: #343a40; margin-bottom: 20px; }
-        ul { list-style: none; padding: 0; max-width: 350px; margin: 20px auto; text-align: left; }
+        .btn-scan { background: #ff9f43; margin-bottom: 10px; }
+        
+        ul { list-style: none; padding: 0; text-align: left; margin: 20px 0; }
         li { background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .scaduto { border-left: 5px solid #ff3b30; }
         .in-scadenza { border-left: 5px solid #ff9f43; }
         .sicuro { border-left: 5px solid #2ecc71; }
         .delete-btn { background: #ff3b30; width: 35px; height: 35px; border-radius: 5px; padding: 0; margin: 0; display: flex; justify-content: center; align-items: center; }
+
+        /* --- FOTOCAMERA --- */
+        #camera-container { display: none; text-align: center; margin-bottom: 20px; position: relative; }
+        .video-wrapper { position: relative; display: inline-block; width: 100%; border-radius: 12px; overflow: hidden; background: #000; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        video { width: 100%; display: block; }
+        #viewfinder {
+            position: absolute; top: 50%; left: 50%; 
+            width: 80%; height: 20%; /* Più largo e stretto per le date */
+            transform: translate(-50%, -50%);
+            border: 3px solid #ff3b30;
+            box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6);
+            border-radius: 8px; pointer-events: none;
+        }
+        #viewfinder::after { 
+            content: 'INQUADRA DATA (GG/MM/AA)'; position: absolute; top: -25px; width: 100%; text-align: center; 
+            color: #ff3b30; font-weight: bold; font-size: 0.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); 
+        }
+        .btn-snap { background: #ff3b30; margin-top: 10px; }
+        .btn-stop { background: #6c757d; }
+        #loading-msg { text-align: center; color: #ff3b30; font-weight: bold; display: none; margin-top: 10px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
-    <button class="btn-back" onclick="location.href='index.html'">🔙 Torna al Menù</button>
-    <h1>🥫 Scadenze Dispensa</h1>
+    <div class="container" id="app-content">
+        <button class="btn-back" onclick="location.href='index.html'">🔙 Torna al Menù</button>
+        <h1>🥫 Scadenze Dispensa</h1>
 
-    <input type="text" id="nomeProdotto" placeholder="Nome prodotto (es. Latte)">
-    <input type="date" id="dataScadenza">
-    <button onclick="aggiungiProdotto()">➕ Aggiungi alla dispensa</button>
+        <input type="text" id="nomeProdotto" placeholder="Nome prodotto (es. Latte)">
+        
+        <div style="display: flex; gap: 10px;">
+            <input type="date" id="dataScadenza" style="flex: 2;">
+            <button class="btn-scan" onclick="startCamera()" style="flex: 1; margin: 0; padding: 12px 5px; font-size: 14px;">📸 Auto</button>
+        </div>
+        
+        <button onclick="aggiungiProdotto()" style="margin-top: 15px;">➕ Aggiungi alla dispensa</button>
 
-    <ul id="listaScadenze"></ul>
+        <ul id="listaScadenze"></ul>
+    </div>
+
+    <!-- SCHERMATA FOTOCAMERA -->
+    <div class="container" id="camera-container">
+        <div class="video-wrapper">
+            <video id="video" playsinline autoplay></video>
+            <div id="viewfinder"></div>
+        </div>
+        <p id="loading-msg">⏳ Lettura data in corso...</p>
+        <button class="btn-snap" onclick="catturaData()">📸 LEGGI DATA</button>
+        <button class="btn-stop" onclick="stopCamera()">Annulla</button>
+        <canvas id="canvas" style="display:none;"></canvas>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', caricaProdotti);
 
+        // --- GESTIONE FOTOCAMERA ---
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const loadingMsg = document.getElementById('loading-msg');
+        let streamVideo = null;
+
+        async function startCamera() {
+            document.getElementById('app-content').style.display = 'none';
+            document.getElementById('camera-container').style.display = 'block';
+            
+            try {
+                streamVideo = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+                });
+                video.srcObject = streamVideo;
+            } catch (err) {
+                alert("Errore fotocamera: " + err.message);
+                stopCamera();
+            }
+        }
+
+        function stopCamera() {
+            if (streamVideo) {
+                streamVideo.getTracks().forEach(track => track.stop());
+                streamVideo = null;
+            }
+            document.getElementById('camera-container').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+            loadingMsg.style.display = 'none';
+        }
+
+        function catturaData() {
+            if (!video.videoWidth) return;
+            loadingMsg.style.display = 'block';
+
+            const vW = video.videoWidth;
+            const vH = video.videoHeight;
+            const sW = vW * 0.80; // 80% larghezza
+            const sH = vH * 0.20; // 20% altezza
+            const sX = (vW - sW) / 2;
+            const sY = (vH - sH) / 2;
+            
+            canvas.width = sW;
+            canvas.height = sH;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, sX, sY, sW, sH, 0, 0, sW, sH);
+
+            // Binarizzazione immagine per migliorare il contrasto delle scritte a puntini
+            let imageData = ctx.getImageData(0, 0, sW, sH);
+            let data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                let avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+                let color = avg > 100 ? 255 : 0; 
+                data[i] = color; data[i + 1] = color; data[i + 2] = color;
+            }
+            ctx.putImageData(imageData, 0, 0);
+
+            // OCR
+            Tesseract.recognize(
+                canvas,
+                'eng',
+                { 
+                    // Limita ai numeri e ai separatori classici delle date
+                    tessedit_char_whitelist: '0123456789/.-',
+                    tessedit_pageseg_mode: '7' 
+                }
+            ).then(({ data: { text } }) => {
+                estraiDataRegex(text);
+            }).catch(err => {
+                alert("Errore lettura. Riprova.");
+                stopCamera();
+            });
+        }
+
+        function estraiDataRegex(testo) {
+            // Cerca pattern tipo: 12/05/2024, 12-05-24, 12.05.24
+            const regex = /(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{2,4})/;
+            const match = testo.match(regex);
+
+            if (match) {
+                let giorno = match[1];
+                let mese = match[2];
+                let anno = match[3];
+
+                // Se l'anno è scritto a due cifre (es. 24), lo fa diventare 2024
+                if (anno.length === 2) {
+                    anno = "20" + anno;
+                }
+
+                // Il campo <input type="date"> accetta solo il formato AAAA-MM-GG
+                const dataFormattata = `${anno}-${mese}-${giorno}`;
+                document.getElementById('dataScadenza').value = dataFormattata;
+                
+                if (navigator.vibrate) navigator.vibrate(200);
+                stopCamera();
+            } else {
+                alert("Data non trovata (" + testo.trim() + ").\nSuggerimento: Appiattisci la superficie, cerca buona luce e inquadra solo i numeri.");
+                loadingMsg.style.display = 'none';
+            }
+        }
+
+        // --- GESTIONE DISPENSA ---
         function aggiungiProdotto() {
             const nome = document.getElementById('nomeProdotto').value;
             const data = document.getElementById('dataScadenza').value;
@@ -50,7 +196,6 @@
             lista.innerHTML = '';
             let prodotti = JSON.parse(localStorage.getItem('scadenze')) || [];
             
-            // Ordina per data più vicina
             prodotti.sort((a, b) => new Date(a.data) - new Date(b.data));
 
             const oggi = new Date();
