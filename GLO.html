@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Conteggio Registrazione GLO</title>
+    <title>Conteggio Registrazione Dispositivi</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -41,81 +41,82 @@
             font-size: 22px;
             color: #e74c3c;
             font-weight: bold;
+            white-space: pre-wrap; /* Permette di andare a capo correttamente nel resoconto */
         }
     </style>
 </head>
 <body>
 
     <button onclick="location.href='index.html'">🔙 Torna al Menù</button>
-    <h1>📦 Registrazione Dispositivi GLO</h1>
+    <h1>📦 Registrazione Dispositivi</h1>
 
     <div id="setup">
-        <p>Quanti dispositivi devi registrare?</p>
+        <p>Quanti dispositivi devi registrare in totale?</p>
         <input type="number" id="totaleDispositivi" placeholder="Totale dispositivi">
-        <p>Quanti sono GLO PRO?</p>
-        <input type="number" id="proDispositivi" placeholder="Numero GLO PRO">
-        <p>Quanti sono GLO HYPER?</p>
-        <input type="number" id="hyperDispositivi" placeholder="Numero GLO HYPER">
+        <p>Quanti sono Hilo?</p>
+        <input type="number" id="hiloDispositivi" placeholder="Numero Hilo">
+        <p>Quanti sono Hilo Plus?</p>
+        <input type="number" id="hiloPlusDispositivi" placeholder="Numero Hilo Plus">
         <br><br>
-        <button id="iniziaBtn">Inizia</button> <!-- Aggiungiamo l'id al pulsante -->
+        <button id="iniziaBtn">Inizia</button>
     </div>
 
     <div id="conteggio" style="display: none;">
         <h2>📋 Gestisci Registrazioni</h2>
         <div class="device-container">
-            <h3>GLO PRO</h3>
-            <button onclick="modifica('pro', -1)">➖</button>
-            <span class="counter" id="contatorePro">0</span>
-            <button onclick="modifica('pro', 1)">➕</button>
+            <h3>HILO</h3>
+            <button onclick="modifica('hilo', -1)">➖</button>
+            <span class="counter" id="contatoreHilo">0</span>
+            <button onclick="modifica('hilo', 1)">➕</button>
         </div>
         <div class="device-container">
-            <h3>GLO HYPER</h3>
-            <button onclick="modifica('hyper', -1)">➖</button>
-            <span class="counter" id="contatoreHyper">0</span>
-            <button onclick="modifica('hyper', 1)">➕</button>
+            <h3>HILO PLUS</h3>
+            <button onclick="modifica('hiloPlus', -1)">➖</button>
+            <span class="counter" id="contatoreHiloPlus">0</span>
+            <button onclick="modifica('hiloPlus', 1)">➕</button>
         </div>
         <div id="totaleFinale">
             🔥 Dispositivi da registrare: <span id="contatoreTotale">0</span>
         </div>
-        <button onclick="reset()">🔄 Reset</button>
+        <button onclick="reset()">🔄 Reset App</button>
     </div>
 
     <div id="datiFinali" style="display: none;">
         <h2>📊 Dettagli Finali</h2>
-        <p>PRO PREMIUM: <input type="number" id="proPremium" value="0"></p>
-        <p>PRO OMAGGI: <input type="number" id="proOmaggio" value="0"></p>
-        <p>HYPER PREMIUM: <input type="number" id="hyperPremium" value="0"></p>
-        <p>HYPER OMAGGI: <input type="number" id="hyperOmaggio" value="0"></p>
-        <p>Vendite? <select id="haVendite" onchange="toggleVendite()">
-            <option value="no">No</option>
-            <option value="si">Sì</option>
-        </select></p>
-        <div id="venditeDettagli" style="display: none;">
-            <p>Tipo vendite:
-                <select id="tipoVendita">
-                    <option value="pro">PRO</option>
-                    <option value="hyper">HYPER</option>
-                </select>
-            </p>
-            <p>Numero vendite: <input type="number" id="numeroVendite" value="0"></p>
+        <p>HILO COMPENSAZIONE: <input type="number" id="hiloCompensazione" value="0"></p>
+        <p>HILO OMAGGI: <input type="number" id="hiloOmaggio" value="0"></p>
+        <p>HILO PLUS COMPENSAZIONE: <input type="number" id="hiloPlusCompensazione" value="0"></p>
+        <p>HILO PLUS OMAGGI: <input type="number" id="hiloPlusOmaggio" value="0"></p>
+        
+        <p>Ci sono state vendite? 
+            <select id="haVendite" onchange="toggleVendite()">
+                <option value="no">No</option>
+                <option value="si">Sì</option>
+            </select>
+        </p>
+        
+        <div id="venditeDettagli" style="display: none; background: #e8ecef; padding: 10px; border-radius: 8px;">
+            <p>Vendite HILO: <input type="number" id="venditeHilo" value="0"></p>
+            <p>Vendite HILO PLUS: <input type="number" id="venditeHiloPlus" value="0"></p>
         </div>
+        
         <button onclick="generaResoconto()">📋 Genera Resoconto</button>
-        <button onclick="resetDati()">🔄 Reset Dati</button>
+        <button onclick="resetDati()" style="background-color: #95a5a6;">🔄 Azzera Dati</button>
     </div>
 
     <div id="resocontoFinale"></div>
 
     <script>
-        let totale = 0, pro = 0, hyper = 0;
+        let totale = 0, numHilo = 0, numHiloPlus = 0;
 
         // Funzione per avviare il conteggio
         function avviaConteggio() {
             totale = parseInt(document.getElementById('totaleDispositivi').value) || 0;
-            pro = parseInt(document.getElementById('proDispositivi').value) || 0;
-            hyper = parseInt(document.getElementById('hyperDispositivi').value) || 0;
+            numHilo = parseInt(document.getElementById('hiloDispositivi').value) || 0;
+            numHiloPlus = parseInt(document.getElementById('hiloPlusDispositivi').value) || 0;
 
-            if (pro + hyper !== totale) {
-                alert("⚠️ La somma di PRO e HYPER deve essere uguale al totale!");
+            if (numHilo + numHiloPlus !== totale) {
+                alert("⚠️ La somma di Hilo e Hilo Plus deve essere uguale al totale!");
                 return;
             }
 
@@ -124,24 +125,23 @@
             aggiornaDisplay();
         }
 
-        // Collega l'evento al pulsante "Inizia"
         document.getElementById('iniziaBtn').addEventListener('click', avviaConteggio);
 
         function modifica(tipo, valore) {
-            if (tipo === 'pro') {
-                if (valore === -1 && pro > 0) pro--;
-                if (valore === 1) pro++;
-            } else if (tipo === 'hyper') {
-                if (valore === -1 && hyper > 0) hyper--;
-                if (valore === 1) hyper++;
+            if (tipo === 'hilo') {
+                if (valore === -1 && numHilo > 0) numHilo--;
+                if (valore === 1) numHilo++;
+            } else if (tipo === 'hiloPlus') {
+                if (valore === -1 && numHiloPlus > 0) numHiloPlus--;
+                if (valore === 1) numHiloPlus++;
             }
             aggiornaDisplay();
         }
 
         function aggiornaDisplay() {
-            const nuovoTotale = pro + hyper;
-            document.getElementById('contatorePro').textContent = pro;
-            document.getElementById('contatoreHyper').textContent = hyper;
+            const nuovoTotale = numHilo + numHiloPlus;
+            document.getElementById('contatoreHilo').textContent = numHilo;
+            document.getElementById('contatoreHiloPlus').textContent = numHiloPlus;
             document.getElementById('contatoreTotale').textContent = nuovoTotale;
 
             if (nuovoTotale === 0) {
@@ -156,31 +156,37 @@
         }
 
         function generaResoconto() {
-            const pp = parseInt(document.getElementById('proPremium').value) || 0;
-            const po = parseInt(document.getElementById('proOmaggio').value) || 0;
-            const hp = parseInt(document.getElementById('hyperPremium').value) || 0;
-            const ho = parseInt(document.getElementById('hyperOmaggio').value) || 0;
+            const hComp = parseInt(document.getElementById('hiloCompensazione').value) || 0;
+            const hOmag = parseInt(document.getElementById('hiloOmaggio').value) || 0;
+            const hpComp = parseInt(document.getElementById('hiloPlusCompensazione').value) || 0;
+            const hpOmag = parseInt(document.getElementById('hiloPlusOmaggio').value) || 0;
 
-            const tipoVendita = document.getElementById('tipoVendita').value;
-            const vendite = document.getElementById('haVendite').value === 'si' ? parseInt(document.getElementById('numeroVendite').value) || 0 : 0;
+            const ciSonoVendite = document.getElementById('haVendite').value === 'si';
+            const vHilo = ciSonoVendite ? (parseInt(document.getElementById('venditeHilo').value) || 0) : 0;
+            const vHiloPlus = ciSonoVendite ? (parseInt(document.getElementById('venditeHiloPlus').value) || 0) : 0;
 
-            let proTotale = pp + po + (tipoVendita === 'pro' ? vendite : 0);
-            let hyperTotale = hp + ho + (tipoVendita === 'hyper' ? vendite : 0);
+            let totaleUsciteHilo = hComp + hOmag + vHilo;
+            let totaleUsciteHiloPlus = hpComp + hpOmag + vHiloPlus;
 
-            if (proTotale > parseInt(document.getElementById('proDispositivi').value) ||
-                hyperTotale > parseInt(document.getElementById('hyperDispositivi').value) ||
-                proTotale + hyperTotale > parseInt(document.getElementById('totaleDispositivi').value)) {
-                alert("❌ I numeri inseriti superano i dispositivi iniziali. Controlla premium, omaggi e vendite.");
+            if (totaleUsciteHilo > parseInt(document.getElementById('hiloDispositivi').value) ||
+                totaleUsciteHiloPlus > parseInt(document.getElementById('hiloPlusDispositivi').value) ||
+                (totaleUsciteHilo + totaleUsciteHiloPlus) > parseInt(document.getElementById('totaleDispositivi').value)) {
+                alert("❌ I numeri inseriti superano i dispositivi iniziali registrati nel turno. Controlla compensazioni, omaggi e vendite.");
                 return;
             }
 
-            let testo = '📄 Resoconto\n';
-            if (pp > 0) testo += `- ${pp} PRO PREMIUM\n`;
-            if (po > 0) testo += `- ${po} PRO OMAGGI\n`;
-            if (hp > 0) testo += `- ${hp} HYPER PREMIUM\n`;
-            if (ho > 0) testo += `- ${ho} HYPER OMAGGI\n`;
-            if (vendite > 0 && tipoVendita === 'pro') testo += `- ${vendite} PRO VENDUTI\n`;
-            if (vendite > 0 && tipoVendita === 'hyper') testo += `- ${vendite} HYPER VENDUTI\n`;
+            let testo = '📄 Resoconto Finale\n';
+            if (hComp > 0) testo += `- ${hComp} HILO COMPENSAZIONE\n`;
+            if (hOmag > 0) testo += `- ${hOmag} HILO OMAGGI\n`;
+            if (hpComp > 0) testo += `- ${hpComp} HILO PLUS COMPENSAZIONE\n`;
+            if (hpOmag > 0) testo += `- ${hpOmag} HILO PLUS OMAGGI\n`;
+            if (vHilo > 0) testo += `- ${vHilo} HILO VENDUTI\n`;
+            if (vHiloPlus > 0) testo += `- ${vHiloPlus} HILO PLUS VENDUTI\n`;
+
+            // Mostra il messaggio se tutto è a zero
+            if(testo === '📄 Resoconto Finale\n') {
+                testo += "Nessun dispositivo registrato in uscita.";
+            }
 
             document.getElementById('resocontoFinale').innerText = testo;
         }
@@ -190,11 +196,16 @@
         }
 
         function resetDati() {
-            // Mantiene il numero iniziale di dispositivi
-            document.getElementById('proPremium').value = 0;
-            document.getElementById('proOmaggio').value = 0;
-            document.getElementById('hyperPremium').value = 0;
-            document.getElementById('hyperOmaggio').value = 0;
+            // Azzera solo i campi finali mantenendo i dispositivi in memoria
+            document.getElementById('hiloCompensazione').value = 0;
+            document.getElementById('hiloOmaggio').value = 0;
+            document.getElementById('hiloPlusCompensazione').value = 0;
+            document.getElementById('hiloPlusOmaggio').value = 0;
+            document.getElementById('venditeHilo').value = 0;
+            document.getElementById('venditeHiloPlus').value = 0;
+            document.getElementById('haVendite').value = "no";
+            toggleVendite();
+            document.getElementById('resocontoFinale').innerText = "";
         }
     </script>
 </body>
