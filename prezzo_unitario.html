@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prezzo al Kg/Litro</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #f0f2f5; padding: 20px; text-align: center; color: #333; }
+        .container { max-width: 350px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input, select, button { padding: 12px; font-size: 16px; border-radius: 8px; border: 1px solid #ddd; width: 100%; margin-bottom: 15px; box-sizing: border-box; }
+        button { background: #2ecc71; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .btn-back { background: #343a40; width: 100%; max-width: 350px; margin-bottom: 20px; }
+        #risultato { font-size: 1.5rem; font-weight: bold; color: #007bff; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <button class="btn-back" onclick="location.href='index.html'">🔙 Torna al Menù</button>
+    
+    <div class="container">
+        <h1>⚖️ Calcolo Rapido</h1>
+        <p style="color: #666; font-size: 0.9rem;">Scopri il prezzo reale al Kg o al Litro</p>
+
+        <input type="number" id="prezzo" placeholder="Prezzo (€) es. 2.50" step="0.01">
+        
+        <div style="display: flex; gap: 10px;">
+            <input type="number" id="quantita" placeholder="Quantità" style="flex: 2;">
+            <select id="unita" style="flex: 1;">
+                <option value="g">Grammi</option>
+                <option value="ml">MilliLitri</option>
+                <option value="kg">Kg</option>
+                <option value="l">Litri</option>
+            </select>
+        </div>
+
+        <button onclick="calcolaPrezzo()">Calcola</button>
+
+        <div id="risultato"></div>
+    </div>
+
+    <script>
+        function calcolaPrezzo() {
+            const prezzo = parseFloat(document.getElementById('prezzo').value.replace(',', '.'));
+            const quantita = parseFloat(document.getElementById('quantita').value.replace(',', '.'));
+            const unita = document.getElementById('unita').value;
+
+            if (isNaN(prezzo) || isNaN(quantita) || quantita <= 0) {
+                document.getElementById('risultato').innerText = "Inserisci valori validi";
+                return;
+            }
+
+            let quantitaInStandard; // Standard = Kg o Litri
+            if (unita === 'g' || unita === 'ml') {
+                quantitaInStandard = quantita / 1000;
+            } else {
+                quantitaInStandard = quantita;
+            }
+
+            const prezzoUnitario = prezzo / quantitaInStandard;
+            const etichetta = (unita === 'g' || unita === 'kg') ? 'al Kg' : 'al Litro';
+
+            document.getElementById('risultato').innerText = `€ ${prezzoUnitario.toFixed(2)} ${etichetta}`;
+        }
+    </script>
+</body>
+</html>
