@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scanner QR Code</title>
+    <!-- Libreria per la lettura dei QR Code -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #f0f2f5; padding: 20px; text-align: center; color: #333; margin: 0; }
+        .container { max-width: 400px; margin: 0 auto; }
+        .btn-back { background: #343a40; color: white; padding: 12px; font-size: 16px; border-radius: 8px; border: none; width: 100%; margin-bottom: 20px; font-weight: bold; cursor: pointer; }
+        
+        #reader-container { background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.2); margin-bottom: 15px; display: none; }
+        #reader { width: 100%; }
+        
+        .btn-start { background: #007bff; color: white; padding: 15px; font-size: 18px; border-radius: 8px; border: none; width: 100%; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
+        .btn-start:active { transform: scale(0.98); }
+        .btn-stop { background: #e74c3c; color: white; padding: 12px; font-size: 16px; border-radius: 8px; border: none; width: 100%; font-weight: bold; cursor: pointer; margin-bottom: 15px; display: none; }
+        
+        #result-box { display: none; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: 15px; word-break: break-all; }
+        #qr-text { font-size: 1.1rem; color: #2d3436; margin-bottom: 15px; font-weight: 500; }
+        
+        .action-btns { display: flex; gap: 10px; }
+        .action-btns button { flex: 1; padding: 12px; font-size: 16px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white; }
+        .btn-copy { background: #2ecc71; }
+        .btn-link { background: #007bff; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <button class="btn-back" onclick="location.href='index.html'">🔙 Torna al Menù</button>
+        
+        <h1>📱 Scanner QR</h1>
+        <p style="color: #666; font-size: 0.9rem; margin-bottom: 20px;">Inquadra qualsiasi codice QR per leggerne il contenuto.</p>
+
+        <button id="btn-start" class="btn-start" onclick="avviaScanner()">📸 Avvia Scanner</button>
+        <button id="btn-stop" class="btn-stop" onclick="fermaScanner()">❌ Annulla</button>
+
+        <div id="reader-container">
+            <div id="reader"></div>
+        </div>
+
+        <div id="result-box">
+            <h3 style="margin-top: 0; color: #27ae60;">✅ Codice Rilevato!</h3>
+            <div id="qr-text"></div>
+            <div class="action-btns">
+                <button class="btn-copy" id="btn-copy" onclick="copiaTesto()">📋 Copia</button>
+                <button class="btn-link" id="btn-link" onclick="apriLink()">🌐 Apri Link</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let html5QrCode;
+        let qrTestoRilevato = "";
+
+        function avviaScanner() {
+            document.getElementById('btn-start').style.display = 'none';
+            document.getElementById('btn-stop').style.display = 'block';
+            document.getElementById('reader-container').style.display = 'block';
+            document.getElementById('result-box').style.display = 'none';
+
+            html5QrCode = new Html5Qrcode("reader");
+            
+            // Configurazione per fotocamera posteriore ad alta frequenza
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 15, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    // Successo: Ferma lo scanner e mostra il risultato
+                    fermaScanner();
+                    mostraRisultato(decodedText);
+                },
+                (errorMessage) => {
+                    // Ignora gli errori di mancata lettura (il sensore scansiona 15 volte al secondo)
+                }
+            ).catch((err) => {
+                alert("Errore accesso fotocamera: " + err);
+                fermaScanner();
+            });
+        }
+
+        function fermaScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                }).catch(err => console.log(err));
+            }
+            document.getElementById('btn-start').style.display = 'block';
+            document.getElementById('btn-stop').style.display = 'none';
+            document.getElementById('reader-container').style.display = 'none';
+        }
+
+        function mostraRisultato(testo) {
+            qrTestoRilevato = testo;
+            document.getElementById('result-box').style.display = 'block';
+            document.getElementById('qr-text').innerText = testo;
+
+            // Vibra se supportato
+            if (navigator.vibrate) navigator.vibrate(200);
+
+            // Controlla se è un URL (inizia con http o www)
+            const btnLink = document.getElementById('btn-link');
+            if (testo.startsWith('http://') || testo.startsWith('https://') || testo.startsWith('www.')) {
+                btnLink.style.display = 'block';
+            } else {
+                btnLink.style.display = 'none';
+            }
+        }
+
+        function copiaTesto() {
+            navigator.clipboard.writeText(qrTestoRilevato).then(() => {
+                const btn = document.getElementById('btn-copy');
+                btn.innerText = "✅ Copiato!";
+                setTimeout(() => { btn.innerText = "📋 Copia"; }, 2000);
+            });
+        }
+
+        function apriLink() {
+            let url = qrTestoRilevato;
+            if (url.startsWith('www.')) {
+                url = 'https://' + url;
+            }
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>
